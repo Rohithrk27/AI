@@ -496,8 +496,20 @@ def page_upload():
 
         # Data preview
         st.markdown("---")
-        st.markdown('<h3 class="gradient-text-blue">Data Preview</h3>', unsafe_allow_html=True)
-        st.dataframe(st.session_state.raw_data.head(20), use_container_width=True)
+        st.markdown('<h3 class="gradient-text-blue">Data Preview (Editable)</h3>', unsafe_allow_html=True)
+        st.markdown("You can edit the data directly in the table below. All numerical columns are forced to floats.")
+        
+        # Use data_editor so user can modify data directly.
+        edited_df = st.data_editor(st.session_state.raw_data, use_container_width=True, num_rows="dynamic")
+        
+        # Force all columns to float where possible, to fulfill the "all factors are float" requirement.
+        for col in edited_df.columns:
+            try:
+                edited_df[col] = edited_df[col].astype(float)
+            except Exception:
+                pass
+                
+        st.session_state.raw_data = edited_df
 
         # Statistics
         stats = compute_statistics(st.session_state.raw_data)
