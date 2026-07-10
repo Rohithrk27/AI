@@ -1,0 +1,251 @@
+"""
+Report Generator Module
+Generates publication-ready PDF reports for the optimization workflow.
+"""
+
+import io
+import numpy as np
+import pandas as pd
+from datetime import datetime
+
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+from fpdf import FPDF
+
+
+class OptiMLReport(FPDF):
+    """Custom PDF report with OptiML branding."""
+
+    def header(self):
+        self.set_font("Helvetica", "B", 10)
+        self.set_text_color(102, 126, 234)
+        self.cell(0, 8, "OptiML - AI-Assisted Experimental Optimization Report", align="R")
+        self.ln(10)
+        self.set_draw_color(102, 126, 234)
+        self.line(10, self.get_y(), self.w - 10, self.get_y())
+        self.ln(5)
+
+    def footer(self):
+        self.set_y(-15)
+        self.set_font("Helvetica", "I", 8)
+        self.set_text_color(150, 150, 150)
+        self.cell(0, 10, f"Page {self.page_no()}/{{nb}} | Generated {datetime.now().strftime('%Y-%m-%d %H:%M')}", align="C")
+
+    def section_title(self, title):
+        self.set_font("Helvetica", "B", 14)
+        self.set_text_color(102, 126, 234)
+        self.cell(0, 10, title, new_x="LMARGIN", new_y="NEXT")
+        self.ln(2)
+
+    def subsection_title(self, title):
+        self.set_font("Helvetica", "B", 11)
+        self.set_text_color(60, 60, 60)
+        self.cell(0, 8, title, new_x="LMARGIN", new_y="NEXT")
+        self.ln(1)
+
+    def body_text(self, text):
+        self.set_font("Helvetica", "", 10)
+        self.set_text_color(40, 40, 40)
+        self.multi_cell(0, 6, text)
+        self.ln(2)
+
+    def add_table(self, df, col_widths=None):
+        """Add a DataFrame as a table to the PDF."""
+        self.set_font("Helvetica", "B", 9)
+        self.set_fill_color(102, 126, 234)
+        self.set_text_color(255, 255, 255)
+
+        cols = list(df.columns)
+        n_cols = len(cols)
+
+        if col_widths is None:
+            available = self.w - 20
+            col_widths = [available / n_cols] * n_cols
+
+        # Header
+        for i, col in enumerate(cols):
+            w = col_widths[i] if i < len(col_widths) else col_widths[-1]
+            self.cell(w, 7, str(col)[:15], border=1, fill=True, align="C")
+        self.ln()
+
+        # Data rows
+        self.set_font("Helvetica", "", 8)
+        self.set_text_color(40, 40, 40)
+
+        for _, row in df.iterrows():
+            for i, col in enumerate(cols):
+                w = col_widths[i] if i < len(col_widths) else col_widths[-1]
+                val = row[col]
+                if isinstance(val, float):
+                    text = f"{val:.4f}"
+                else:
+                    text = str(val)[:15]
+
+                # Alternate row colors
+                if _ % 2 == 0:
+                    self.set_fill_color(245, 245, 250)
+                else:
+                    self.set_fill_color(255, 255, 255)
+
+                self.cell(w, 6, text, border=1, fill=True, align="C")
+            self.ln()
+
+        self.ln(4)
+
+
+def generate_report(report_data: dict) -> bytes:
+    """
+    Generate a complete PDF report.
+    
+    Args:
+        report_data: Dict containing all session data
+        
+    Returns:
+        bytes: PDF content
+    """
+    pdf = OptiMLReport()
+    pdf.alias_nb_pages()
+    pdf.set_auto_page_break(auto=True, margin=20)
+
+    # ──────────────────────────────────────
+    # Title Page
+    # ──────────────────────────────────────
+    pdf.add_page()
+    pdf.ln(40)
+    pdf.set_font("Helvetica", "B", 28)
+    pdf.set_text_color(102, 126, 234)
+    pdf.cell(0, 15, "OptiML", align="C", new_x="LMARGIN", new_y="NEXT")
+
+    pdf.set_font("Helvetica", "", 14)
+    pdf.set_text_color(100, 100, 100)
+    pdf.cell(0, 10, "AI-Assisted Experimental Optimization Report", align="C", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(10)
+
+    pdf.set_font("Helvetica", "", 11)
+    pdf.set_text_color(60, 60, 60)
+    pdf.cell(0, 8, f"Generated: {datetime.now().strftime('%B %d, %Y at %H:%M')}", align="C", new_x="LMARGIN", new_y="NEXT")
+
+    # ──────────────────────────────────────
+    # 1. Dataset Summary
+    # ──────────────────────────────────────
+    pdf.add_page()
+    pdf.section_title("1. Dataset Summary")
+
+    raw_data = report_data.get("raw_data")
+    factor_cols = report_data.get("factor_cols", [])
+    response_cols = report_data.get("response_cols", [])
+
+    if raw_data is not None:
+        pdf.body_text(f"Total experiments: {len(raw_data)}")
+        pdf.body_text(f"Factors ({len(factor_cols)}): {', '.join(factor_cols)}")
+        pdf.body_text(f"Responses ({len(response_cols)}): {', '.join(response_cols)}")
+        pdf.body_text(f"Iterations performed: {report_data.get('iteration_count', 0)}")
+
+        # Data statistics
+        pdf.subsection_title("Dataset Statistics")
+        numeric_cols = factor_cols + response_cols
+        stats = raw_data[numeric_cols].describe().round(4).reset_index()
+        stats.columns = ["Statistic"] + numeric_cols
+        pdf.add_table(stats)
+
+    # ──────────────────────────────────────
+    # 2. Model Benchmarking
+    # ──────────────────────────────────────
+    pdf.add_page()
+    pdf.section_title("2. Model Benchmarking Results")
+
+    eval_results = report_data.get("evaluation_results", {})
+    if eval_results:
+        rows = []
+        for name, metrics in eval_results.items():
+            if "error" in metrics:
+                continue
+            rows.append({
+                "Model": name,
+                "R²": metrics.get("R²", ""),
+                "CV R²": metrics.get("CV_R²_mean", ""),
+                "RMSE": metrics.get("RMSE", ""),
+                "MAE": metrics.get("MAE", ""),
+            })
+
+        if rows:
+            bench_df = pd.DataFrame(rows)
+            pdf.add_table(bench_df)
+
+        best_name = report_data.get("best_model_name", "N/A")
+        pdf.body_text(f"Best model (auto-selected): {best_name}")
+
+    # Tuning results
+    tuning_results = report_data.get("tuning_results", {})
+    if tuning_results:
+        pdf.subsection_title("Optuna Hyperparameter Tuning")
+        for name, result in tuning_results.items():
+            if "best_params" in result and result["best_params"]:
+                pdf.body_text(f"{name}: Best CV R² = {result.get('best_cv_score', 'N/A'):.4f}")
+                params_str = ", ".join(f"{k}={v}" for k, v in list(result["best_params"].items())[:5])
+                pdf.body_text(f"  Parameters: {params_str}")
+
+    # ──────────────────────────────────────
+    # 3. Optimization Results
+    # ──────────────────────────────────────
+    pdf.add_page()
+    pdf.section_title("3. Optimization Results")
+
+    bo_recs = report_data.get("bo_recommendations")
+    if bo_recs is not None and len(bo_recs) > 0:
+        pdf.subsection_title("Recommended Optimal Conditions")
+        # Show top recommendation
+        top = bo_recs.iloc[0]
+        for col in bo_recs.columns:
+            if col not in ["Rank"]:
+                val = top[col]
+                if isinstance(val, float):
+                    pdf.body_text(f"  {col}: {val:.4f}")
+                else:
+                    pdf.body_text(f"  {col}: {val}")
+
+        pdf.ln(5)
+        pdf.subsection_title("All Recommendations")
+        pdf.add_table(bo_recs)
+
+    # Convergence
+    bo_history = report_data.get("bo_history", [])
+    if bo_history:
+        pdf.subsection_title("Convergence History")
+        for h in bo_history:
+            pdf.body_text(f"  Iteration {h['iteration']}: Best = {h['best_value']:.4f} ({h.get('n_experiments', '?')} experiments)")
+
+    # ──────────────────────────────────────
+    # 4. Conclusion
+    # ──────────────────────────────────────
+    pdf.add_page()
+    pdf.section_title("4. Summary & Conclusions")
+    pdf.body_text(
+        "This report was generated by OptiML, an AI-assisted experimental optimization platform. "
+        "The platform trained and benchmarked multiple machine learning models on the provided experimental data, "
+        "automatically tuned hyperparameters using Optuna, and used Bayesian Optimization to recommend "
+        "optimal experimental conditions."
+    )
+
+    if report_data.get("best_model_name"):
+        pdf.body_text(f"The best-performing model was {report_data['best_model_name']}.")
+
+    if report_data.get("iteration_count", 0) > 0:
+        pdf.body_text(
+            f"A total of {report_data['iteration_count']} optimization iterations were performed, "
+            f"progressively improving the model's predictions."
+        )
+
+    pdf.ln(10)
+    pdf.body_text("— End of Report —")
+
+    # Output
+    return pdf.output()
+
+
+def save_report(report_bytes: bytes, filepath: str):
+    """Save report bytes to a file."""
+    with open(filepath, "wb") as f:
+        f.write(report_bytes)
