@@ -1,6 +1,6 @@
-# 🧬 OptiML — AI-Assisted Experimental Optimization Platform
+# 🧬 OptiLab — AI-Assisted Experimental Optimization Platform
 
-**OptiML** is a domain-agnostic, AI-assisted experimental optimization platform. It helps researchers find optimal experimental conditions with fewer experiments by combining machine learning with Bayesian Optimization.
+**OptiLab** is a domain-agnostic, AI-assisted experimental optimization platform. It helps researchers find optimal experimental conditions with fewer experiments by combining machine learning with Bayesian Optimization.
 
 ## ✨ Features
 
@@ -80,7 +80,7 @@ AI/
 
 ## 🧪 Supported Domains
 
-OptiML works for **any experimental optimization** problem:
+OptiLab works for **any experimental optimization** problem:
 
 - 🧫 Biotechnology & Fermentation
 - ⚗️ Chemical Engineering

@@ -1,5 +1,5 @@
 """
-OptiML — AI-Assisted Experimental Optimization Platform
+OptiLab — AI-Assisted Experimental Optimization Platform
 Main Streamlit Application
 """
 
@@ -15,7 +15,7 @@ warnings.filterwarnings("ignore")
 # Page Configuration
 # ──────────────────────────────────────────────
 st.set_page_config(
-    page_title="OptiML — AI Experimental Optimizer",
+    page_title="OptiLab — AI Experimental Optimizer",
     page_icon="🧬",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -371,57 +371,38 @@ init_session_state()
 # ──────────────────────────────────────────────
 # Sidebar Navigation
 # ──────────────────────────────────────────────
-PAGES = [
+PHASES = [
     "🏠 Home",
-    "📄 Upload Data",
-    "🧹 Preprocessing",
-    "🤖 Train Models",
-    "🔬 Explainability",
-    "📊 Visualizations",
-    "🎯 Optimize",
-    "🔄 Iterate",
-    "📄 Report",
-    "📚 History",
+    "📊 Phase 1: Data Preparation",
+    "🤖 Phase 2: Modeling & Insights",
+    "🎯 Phase 3: Optimization",
+    "📄 Phase 4: Export & History"
 ]
 
 def get_step_status(page):
-    """Return status for each page step."""
-    if page == "🏠 Home":
-        return "done"
-    if page == "📄 Upload Data":
-        return "done" if st.session_state.raw_data is not None else "active" if st.session_state.current_page == page else "inactive"
-    if page == "🧹 Preprocessing":
-        return "done" if st.session_state.preprocessed is not None else "active" if st.session_state.current_page == page else "inactive"
-    if page == "🤖 Train Models":
-        return "done" if st.session_state.best_model is not None else "active" if st.session_state.current_page == page else "inactive"
-    if page == "🔬 Explainability":
-        return "done" if st.session_state.best_model is not None and "shap_done" in st.session_state else "active" if st.session_state.current_page == page else "inactive"
-    if page == "📊 Visualizations":
-        return "active" if st.session_state.current_page == page else "inactive"
-    if page == "🎯 Optimize":
-        return "done" if st.session_state.bo_recommendations is not None else "active" if st.session_state.current_page == page else "inactive"
-    if page == "🔄 Iterate":
-        return "done" if st.session_state.iteration_count > 0 else "active" if st.session_state.current_page == page else "inactive"
     return "inactive"
 
+if "current_phase" not in st.session_state:
+    st.session_state.current_phase = "🏠 Home"
+
 with st.sidebar:
-    st.markdown("""
+    st.markdown('''
     <div style="text-align: center; padding: 20px 0 10px 0;">
         <div style="font-size: 2.5rem;">🧬</div>
-        <div class="gradient-text" style="font-size: 1.8rem;">OptiML</div>
+        <div class="gradient-text" style="font-size: 1.8rem;">OptiLab</div>
         <div style="color: #718096; font-size: 0.8rem; margin-top: 4px;">AI Experimental Optimizer</div>
     </div>
-    """, unsafe_allow_html=True)
+    ''', unsafe_allow_html=True)
 
     st.markdown("---")
 
-    selected_page = st.radio(
-        "Navigation",
-        PAGES,
-        index=PAGES.index(st.session_state.current_page),
+    selected_phase = st.radio(
+        "Navigation Workflow",
+        PHASES,
+        index=PHASES.index(st.session_state.current_phase),
         label_visibility="collapsed",
     )
-    st.session_state.current_page = selected_page
+    st.session_state.current_phase = selected_phase
 
     st.markdown("---")
 
@@ -432,12 +413,12 @@ with st.sidebar:
     model_status = "✅" if st.session_state.best_model is not None else "⬜"
     opt_status = "✅" if st.session_state.bo_recommendations is not None else "⬜"
 
-    st.markdown(f"""
+    st.markdown(f'''
     {data_status} Data loaded  
     {prep_status} Preprocessed  
     {model_status} Models trained  
     {opt_status} Optimized  
-    """)
+    ''')
 
 
 # ──────────────────────────────────────────────
@@ -447,7 +428,7 @@ def page_home():
     st.markdown("""
     <div class="hero-container animate-in">
         <div class="hero-title">
-            <span class="gradient-text">OptiML</span>
+            <span class="gradient-text">OptiLab</span>
         </div>
         <p class="hero-subtitle">
             AI-Assisted Experimental Optimization Platform<br/>
@@ -533,7 +514,7 @@ def page_home():
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
         if st.button("🚀  Get Started — Upload Data", use_container_width=True, type="primary"):
-            st.session_state.current_page = "📄 Upload Data"
+            st.session_state.current_phase = "📊 Phase 1: Data Preparation"
             st.rerun()
 
     # Domain examples
@@ -595,7 +576,7 @@ def page_upload():
             </div>
             <div class="feature-title" style="margin-top: 16px;">Auto-Detection</div>
             <div class="feature-desc" style="margin-top: 8px;">
-                OptiML automatically detects your file format and extracts factors, responses, and design type.
+                OptiLab automatically detects your file format and extracts factors, responses, and design type.
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -725,7 +706,7 @@ def page_upload():
             # Next step button
             st.markdown("<br/>", unsafe_allow_html=True)
             if st.button("➡️  Proceed to Preprocessing", use_container_width=True, type="primary"):
-                st.session_state.current_page = "🧹 Preprocessing"
+                st.success("Data uploaded. Please switch to the Preprocessing tab above.")
                 st.rerun()
 
 
@@ -803,7 +784,7 @@ def page_preprocessing():
 
         st.markdown("<br/>", unsafe_allow_html=True)
         if st.button("➡️  Proceed to Model Training", use_container_width=True, type="primary"):
-            st.session_state.current_page = "🤖 Train Models"
+            st.session_state.current_phase = "🤖 Phase 2: Modeling & Insights"
             st.rerun()
 
     elif st.session_state.preprocessed is not None:
@@ -811,7 +792,7 @@ def page_preprocessing():
         st.success(f"✅ Data already preprocessed — {result['X'].shape[0]} samples, {result['X'].shape[1]} features")
 
         if st.button("➡️  Proceed to Model Training", use_container_width=True, type="primary"):
-            st.session_state.current_page = "🤖 Train Models"
+            st.session_state.current_phase = "🤖 Phase 2: Modeling & Insights"
             st.rerun()
 
 
@@ -937,11 +918,11 @@ def page_train():
         col1, col2 = st.columns(2)
         with col1:
             if st.button("🔬  Explore SHAP Explainability", use_container_width=True):
-                st.session_state.current_page = "🔬 Explainability"
+                st.success("Please switch to the Explainability tab above.")
                 st.rerun()
         with col2:
             if st.button("🎯  Proceed to Optimization", use_container_width=True, type="primary"):
-                st.session_state.current_page = "🎯 Optimize"
+                st.session_state.current_phase = "🎯 Phase 3: Optimization"
                 st.rerun()
 
 
@@ -1211,7 +1192,7 @@ def page_optimize():
             st.plotly_chart(fig, use_container_width=True)
 
         if st.button("🔄  Go to Iterate (Enter New Results)", use_container_width=True, type="primary"):
-            st.session_state.current_page = "🔄 Iterate"
+            st.success("Please switch to the Iterate tab above.")
             st.rerun()
 
 
@@ -1289,7 +1270,7 @@ def page_iterate():
         st.session_state.bo_recommendations = None  # Reset so optimization can be rerun
 
         if st.button("🎯  Run New Optimization", use_container_width=True):
-            st.session_state.current_page = "🎯 Optimize"
+            st.session_state.current_phase = "🎯 Phase 3: Optimization"
             st.rerun()
 
     # Convergence plot
@@ -1358,7 +1339,7 @@ def page_report():
         st.download_button(
             label="⬇️  Download PDF Report",
             data=pdf_bytes,
-            file_name="OptiML_Optimization_Report.pdf",
+            file_name="OptiLab_Optimization_Report.pdf",
             mime="application/pdf",
             use_container_width=True,
         )
@@ -1419,30 +1400,55 @@ def page_history():
 
 
 # ──────────────────────────────────────────────
-# Page Router
+# Phase Routers
 # ──────────────────────────────────────────────
-PAGE_FUNCTIONS = {
+def phase_data_prep():
+    tab1, tab2 = st.tabs(["📄 Upload Data", "🧹 Preprocessing"])
+    with tab1:
+        page_upload()
+    with tab2:
+        page_preprocessing()
+
+def phase_modeling():
+    tab1, tab2, tab3 = st.tabs(["🤖 Train Models", "📊 Visualizations", "🔬 Explainability"])
+    with tab1:
+        page_train()
+    with tab2:
+        page_visualizations()
+    with tab3:
+        page_explainability()
+
+def phase_optimization():
+    tab1, tab2 = st.tabs(["🎯 Bayesian Optimization", "🔄 Iterate"])
+    with tab1:
+        page_optimize()
+    with tab2:
+        page_iterate()
+
+def phase_export():
+    tab1, tab2 = st.tabs(["📄 Generate Report", "📚 History"])
+    with tab1:
+        page_report()
+    with tab2:
+        page_history()
+
+PHASE_FUNCTIONS = {
     "🏠 Home": page_home,
-    "📄 Upload Data": page_upload,
-    "🧹 Preprocessing": page_preprocessing,
-    "🤖 Train Models": page_train,
-    "🔬 Explainability": page_explainability,
-    "📊 Visualizations": page_visualizations,
-    "🎯 Optimize": page_optimize,
-    "🔄 Iterate": page_iterate,
-    "📄 Report": page_report,
-    "📚 History": page_history,
+    "📊 Phase 1: Data Preparation": phase_data_prep,
+    "🤖 Phase 2: Modeling & Insights": phase_modeling,
+    "🎯 Phase 3: Optimization": phase_optimization,
+    "📄 Phase 4: Export & History": phase_export,
 }
 
-# Render the selected page
-page_fn = PAGE_FUNCTIONS.get(st.session_state.current_page, page_home)
+# Render the selected phase
+page_fn = PHASE_FUNCTIONS.get(st.session_state.current_phase, page_home)
 page_fn()
 
 # Footer
 st.markdown("---")
-st.markdown("""
+st.markdown('''
 <div style="text-align: center; color: #4a5568; font-size: 0.8rem; padding: 12px;">
-    🧬 OptiML v1.0 — AI-Assisted Experimental Optimization Platform<br/>
+    🧬 OptiLab v1.0 — AI-Assisted Experimental Optimization Platform<br/>
     Built with Streamlit • scikit-learn • Optuna • SHAP • Plotly
 </div>
-""", unsafe_allow_html=True)
+''', unsafe_allow_html=True)
