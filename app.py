@@ -4,6 +4,18 @@ Main Streamlit Application
 """
 
 import streamlit as st
+import sys
+if sys.stdout.encoding != 'utf-8':
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except AttributeError:
+        pass
+
+
+
+def change_phase(new_phase):
+    st.session_state.current_phase = new_phase
+
 import pandas as pd
 import numpy as np
 import warnings
@@ -26,303 +38,192 @@ st.set_page_config(
 # ──────────────────────────────────────────────
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
 
     /* Global */
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
     }
+    
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Outfit', sans-serif !important;
+    }
 
-    /* Main background gradient */
+    /* Main background gradient - Deeper space look */
     .stApp {
-        background: linear-gradient(135deg, #0e1117 0%, #1a1f2e 50%, #0e1117 100%);
+        background: radial-gradient(circle at 50% 0%, #1a2333 0%, #0a0e17 60%, #05070a 100%);
     }
 
     /* Sidebar styling */
     section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #131722 0%, #1a1f2e 100%);
-        border-right: 1px solid rgba(102, 126, 234, 0.2);
+        background: linear-gradient(180deg, #0f1522 0%, #0a0e17 100%);
+        border-right: 1px solid rgba(67, 233, 123, 0.15);
     }
 
     section[data-testid="stSidebar"] .stRadio > label {
-        color: #a0aec0 !important;
+        color: #94a3b8 !important;
         font-weight: 500;
+        padding: 8px 12px;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+    
+    /* Active state for radio conceptually (streamlit applies specific classes but we can target hover) */
+    section[data-testid="stSidebar"] .stRadio > label:hover {
+        background: rgba(67, 233, 123, 0.05);
+        color: #e2e8f0 !important;
     }
 
-    /* Glassmorphism cards */
+    /* Glassmorphism cards - Frosted glass */
     .glass-card {
-        background: rgba(26, 31, 46, 0.7);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid rgba(102, 126, 234, 0.15);
-        border-radius: 16px;
+        background: rgba(17, 24, 39, 0.6);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
         padding: 24px;
-        margin: 12px 0;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        margin: 16px 0;
+        box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .glass-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 12px 40px rgba(102, 126, 234, 0.15);
+        transform: translateY(-4px);
+        box-shadow: 0 20px 40px -10px rgba(67, 233, 123, 0.1);
+        border: 1px solid rgba(67, 233, 123, 0.2);
     }
 
-    /* Gradient text */
+    /* Neon Gradient text */
     .gradient-text {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
         font-weight: 800;
+        letter-spacing: -0.5px;
+        text-shadow: 0 0 30px rgba(67, 233, 123, 0.3);
     }
 
     .gradient-text-blue {
-        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
         font-weight: 700;
+        letter-spacing: -0.5px;
+    }
+
+    /* Customizing Streamlit Core Components */
+    
+    /* Primary Buttons Glow */
+    [data-testid="baseButton-primary"] {
+        background: linear-gradient(135deg, #43e97b 0%, #22c55e 100%) !important;
+        border: none !important;
+        color: #000000 !important;
+        font-weight: 600 !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 15px rgba(67, 233, 123, 0.3) !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    [data-testid="baseButton-primary"]:hover {
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 8px 25px rgba(67, 233, 123, 0.5) !important;
+    }
+
+    /* Dataframes/Tables rounded */
+    [data-testid="stDataFrame"] {
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Expanders styling */
+    [data-testid="stExpander"] {
+        background: rgba(17, 24, 39, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    [data-testid="stExpander"] > details > summary {
+        background: rgba(255, 255, 255, 0.02);
     }
 
     /* Hero section */
     .hero-container {
         text-align: center;
-        padding: 40px 20px;
+        padding: 60px 20px;
     }
 
     .hero-title {
-        font-size: 3.5rem;
-        margin-bottom: 8px;
-        line-height: 1.1;
+        font-size: 4rem;
+        font-weight: 800;
+        margin-bottom: 0px;
+        font-family: 'Outfit', sans-serif;
     }
 
     .hero-subtitle {
         font-size: 1.25rem;
-        color: #a0aec0;
+        color: #94a3b8;
         font-weight: 400;
-        margin-bottom: 32px;
+        margin-top: 10px;
+        margin-bottom: 40px;
     }
 
-    /* Step indicator */
-    .step-indicator {
-        display: flex;
-        justify-content: center;
-        gap: 8px;
-        margin: 24px 0;
-        flex-wrap: wrap;
-    }
-
-    .step-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 8px 16px;
-        border-radius: 24px;
-        font-size: 0.85rem;
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
-
-    .step-badge-active {
-        background: linear-gradient(135deg, #667eea, #764ba2);
-        color: white;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-    }
-
-    .step-badge-inactive {
-        background: rgba(102, 126, 234, 0.1);
-        color: #667eea;
-        border: 1px solid rgba(102, 126, 234, 0.2);
-    }
-
-    .step-badge-done {
-        background: rgba(67, 233, 123, 0.15);
-        color: #43e97b;
+    /* Feature pills */
+    .feature-pill {
+        display: inline-block;
+        padding: 6px 16px;
+        background: rgba(67, 233, 123, 0.1);
         border: 1px solid rgba(67, 233, 123, 0.3);
-    }
-
-    /* Metric cards */
-    .metric-card {
-        background: rgba(26, 31, 46, 0.6);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(102, 126, 234, 0.1);
-        border-radius: 12px;
-        padding: 20px;
-        text-align: center;
-    }
-
-    .metric-value {
-        font-size: 2rem;
-        font-weight: 700;
-        background: linear-gradient(135deg, #667eea, #4facfe);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-
-    .metric-label {
+        border-radius: 20px;
+        color: #43e97b;
         font-size: 0.85rem;
-        color: #718096;
+        font-weight: 600;
+        margin: 0 6px;
         text-transform: uppercase;
         letter-spacing: 1px;
-        margin-top: 4px;
     }
 
-    /* Feature cards */
-    .feature-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 16px;
-        margin: 20px 0;
-    }
-
-    .feature-card {
-        background: rgba(26, 31, 46, 0.5);
-        border: 1px solid rgba(102, 126, 234, 0.1);
-        border-radius: 12px;
-        padding: 20px;
-        transition: all 0.3s ease;
-    }
-
-    .feature-card:hover {
-        border-color: rgba(102, 126, 234, 0.4);
-        transform: translateY(-3px);
-    }
-
-    .feature-icon {
-        font-size: 2rem;
-        margin-bottom: 8px;
-    }
-
-    .feature-title {
-        font-size: 1rem;
-        font-weight: 600;
-        color: #e0e0e0;
-        margin-bottom: 4px;
-    }
-
-    .feature-desc {
-        font-size: 0.85rem;
-        color: #718096;
-        line-height: 1.5;
-    }
-
-    /* Workflow diagram */
+    /* Workflow pipeline */
     .workflow-step {
+        padding: 12px 20px;
+        background: rgba(15, 23, 42, 0.6);
+        border-left: 4px solid;
+        border-radius: 8px;
+        margin-bottom: 12px;
+        font-weight: 500;
         display: flex;
         align-items: center;
-        gap: 16px;
-        padding: 12px 20px;
-        margin: 6px 0;
-        background: rgba(26, 31, 46, 0.4);
-        border-left: 3px solid;
-        border-radius: 0 8px 8px 0;
-        transition: all 0.3s ease;
+        color: #f8fafc;
+        transition: transform 0.2s ease;
     }
-
     .workflow-step:hover {
-        background: rgba(26, 31, 46, 0.7);
-        transform: translateX(4px);
+        transform: translateX(5px);
+        background: rgba(30, 41, 59, 0.8);
     }
 
     .workflow-arrow {
         text-align: center;
-        color: #4a5568;
+        color: #475569;
+        margin-bottom: 12px;
         font-size: 1.2rem;
-        margin: 2px 0;
     }
 
-    /* Table styling */
-    .stDataFrame {
+    /* Minimal metric cards */
+    .metric-card {
+        background: rgba(15, 23, 42, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 16px;
         border-radius: 12px;
-        overflow: hidden;
+        text-align: center;
+        transition: background 0.3s;
+    }
+    .metric-card:hover {
+        background: rgba(30, 41, 59, 0.8);
     }
 
-    /* Button styling */
-    .stButton > button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 8px 24px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-    }
-
-    .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-    }
-
-    /* File uploader */
-    .stFileUploader {
-        border-radius: 12px;
-    }
-
-    /* Progress bar */
-    .stProgress > div > div > div {
-        background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
-    }
-
-    /* Tabs */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-    }
-
-    .stTabs [data-baseweb="tab"] {
-        border-radius: 8px;
-        padding: 8px 20px;
-    }
-
-    /* Expander */
-    .streamlit-expanderHeader {
-        background: rgba(26, 31, 46, 0.5);
-        border-radius: 8px;
-    }
-
-    /* Divider */
-    hr {
-        border-color: rgba(102, 126, 234, 0.15);
-    }
-
-    /* Scrollbar */
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #0e1117; }
-    ::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #4a5568; }
-
-    /* Animation keyframes */
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    .animate-in {
-        animation: fadeIn 0.5s ease-out;
-    }
-
-    /* Status pills */
-    .status-pill {
-        display: inline-block;
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-
-    .status-success {
-        background: rgba(67, 233, 123, 0.15);
-        color: #43e97b;
-    }
-
-    .status-warning {
-        background: rgba(245, 175, 25, 0.15);
-        color: #f5af19;
-    }
-
-    .status-info {
-        background: rgba(79, 172, 254, 0.15);
-        color: #4facfe;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -373,10 +274,12 @@ init_session_state()
 # ──────────────────────────────────────────────
 PHASES = [
     "🏠 Home",
-    "📊 Phase 1: Data Preparation",
-    "🤖 Phase 2: Modeling & Insights",
-    "🎯 Phase 3: Optimization",
-    "📄 Phase 4: Export & History"
+    "1️⃣ Data Upload",
+    "2️⃣ Preprocessing",
+    "3️⃣ Model Training",
+    "4️⃣ Bayesian Optimization",
+    "5️⃣ Iterate (New Results)",
+    "6️⃣ Report & History"
 ]
 
 def get_step_status(page):
@@ -396,13 +299,12 @@ with st.sidebar:
 
     st.markdown("---")
 
-    selected_phase = st.radio(
+    st.radio(
         "Navigation Workflow",
         PHASES,
-        index=PHASES.index(st.session_state.current_phase),
+        key="current_phase",
         label_visibility="collapsed",
     )
-    st.session_state.current_phase = selected_phase
 
     st.markdown("---")
 
@@ -439,47 +341,14 @@ def page_home():
 
     # Feature grid
     st.markdown("""
-    <div class="feature-grid animate-in">
-        <div class="feature-card">
-            <div class="feature-icon">📄</div>
-            <div class="feature-title">Smart Data Import</div>
-            <div class="feature-desc">Upload CSV, Excel, or native Design-Expert, Minitab, and JMP exports. Auto-detects format and variables.</div>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon">🤖</div>
-            <div class="feature-title">7 ML Models</div>
-            <div class="feature-desc">Trains GP, Random Forest, XGBoost, LightGBM, CatBoost, ANN, and SVR. Auto-selects the best.</div>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon">⚙️</div>
-            <div class="feature-title">Auto Hyperparameter Tuning</div>
-            <div class="feature-desc">Optuna-powered hyperparameter optimization for every model. No manual tuning needed.</div>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon">🎯</div>
-            <div class="feature-title">Bayesian Optimization</div>
-            <div class="feature-desc">EI, UCB, and PI acquisition functions intelligently recommend your next experiments.</div>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon">🔬</div>
-            <div class="feature-title">SHAP Explainability</div>
-            <div class="feature-desc">Understand which variables drive your response using SHAP feature importance.</div>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon">📊</div>
-            <div class="feature-title">Interactive Visualizations</div>
-            <div class="feature-desc">3D response surfaces, contour plots, convergence charts — all interactive with Plotly.</div>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon">🎛️</div>
-            <div class="feature-title">Multi-Objective</div>
-            <div class="feature-desc">Optimize multiple responses simultaneously. Visualize Pareto fronts and trade-offs.</div>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon">📄</div>
-            <div class="feature-title">Publication Reports</div>
-            <div class="feature-desc">Export PDF reports with ANOVA tables, model comparisons, and optimized conditions.</div>
-        </div>
+    <div class="glass-card animate-in" style="max-width: 800px; margin: 0 auto; text-align: center; padding: 40px;">
+        <h3 class="gradient-text-blue" style="margin-top: 0;">What is OptiLab?</h3>
+        <p style="font-size: 1.1rem; color: #cbd5e1; line-height: 1.6; margin-bottom: 20px;">
+            OptiLab is a next-generation AI platform designed to replace classical Response Surface Methodology (RSM) with advanced Machine Learning. 
+        </p>
+        <p style="font-size: 1.1rem; color: #cbd5e1; line-height: 1.6;">
+            By combining state-of-the-art surrogate modeling with Bayesian Optimization, OptiLab helps researchers discover absolute optimum conditions faster, more accurately, and with fewer physical experiments.
+        </p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -492,9 +361,8 @@ def page_home():
         ("📄", "Upload your experimental data", "border-color: #667eea;"),
         ("🔍", "Auto-detect format and variable types", "border-color: #764ba2;"),
         ("🧹", "Preprocess: handle missing values, normalize, encode", "border-color: #f093fb;"),
-        ("🤖", "Train & benchmark 7 ML models with auto-tuning", "border-color: #ec4899;"),
-        ("🏆", "Automatically select the best-performing model", "border-color: #f5af19;"),
-        ("🔬", "Explain predictions with SHAP analysis", "border-color: #ff6b6b;"),
+        ("🤖", "Train Gaussian Process surrogate with auto-tuning", "border-color: #ec4899;"),
+        ("🏆", "Optimize Gaussian Process hyperparameters", "border-color: #f5af19;"),
         ("🎯", "Bayesian Optimization recommends next experiments", "border-color: #4facfe;"),
         ("✍️", "Perform experiments and enter results", "border-color: #43e97b;"),
         ("🔄", "Model retrains and improves", "border-color: #38f9d7;"),
@@ -513,9 +381,7 @@ def page_home():
     # Call to action
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
-        if st.button("🚀  Get Started — Upload Data", use_container_width=True, type="primary"):
-            st.session_state.current_phase = "📊 Phase 1: Data Preparation"
-            st.rerun()
+        st.button("🚀 Get Started — Upload Data", use_container_width=True, type="primary", on_click=change_phase, args=("1️⃣ Data Upload",))
 
     # Domain examples
     st.markdown("---")
@@ -560,7 +426,7 @@ def page_upload():
             help="Supported: CSV, Excel, Design-Expert export, Minitab export, JMP export"
         )
 
-        use_sample = st.checkbox("📂 Use sample dataset (Citric Acid Adsorption)")
+        use_sample = st.checkbox("📂 Use sample dataset (Citric Acid Adsorption)", help="Loads a pre-configured biological dataset for testing.")
 
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -705,9 +571,7 @@ def page_upload():
 
             # Next step button
             st.markdown("<br/>", unsafe_allow_html=True)
-            if st.button("➡️  Proceed to Preprocessing", use_container_width=True, type="primary"):
-                st.success("Data uploaded. Please switch to the Preprocessing tab above.")
-                st.rerun()
+            st.button("➡️ Proceed to Preprocessing", use_container_width=True, type="primary", on_click=change_phase, args=("2️⃣ Preprocessing",))
 
 
 # ──────────────────────────────────────────────
@@ -783,17 +647,13 @@ def page_preprocessing():
             st.dataframe(y_preview.head(10), use_container_width=True)
 
         st.markdown("<br/>", unsafe_allow_html=True)
-        if st.button("➡️  Proceed to Model Training", use_container_width=True, type="primary"):
-            st.session_state.current_phase = "🤖 Phase 2: Modeling & Insights"
-            st.rerun()
+        st.button("➡️  Proceed to Model Training", use_container_width=True, type="primary", on_click=change_phase, args=("3️⃣ Model Training",))
 
     elif st.session_state.preprocessed is not None:
         result = st.session_state.preprocessed
         st.success(f"✅ Data already preprocessed — {result['X'].shape[0]} samples, {result['X'].shape[1]} features")
 
-        if st.button("➡️  Proceed to Model Training", use_container_width=True, type="primary"):
-            st.session_state.current_phase = "🤖 Phase 2: Modeling & Insights"
-            st.rerun()
+        st.button("➡️  Proceed to Model Training", use_container_width=True, type="primary", on_click=change_phase, args=("3️⃣ Model Training",))
 
 
 # ──────────────────────────────────────────────
@@ -828,13 +688,13 @@ def page_train():
     
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        enable_tuning = st.checkbox("⚙️ Enable Auto-Tuning (Optuna)", value=True)
+        enable_tuning = st.checkbox("⚙️ Enable Auto-Tuning (Optuna)", value=True, help="Automatically searches for the best hyperparameter configuration for each model to maximize R-squared.")
     with col2:
-        n_trials = st.number_input("Trials per model", min_value=10, max_value=200, value=50, step=10)
+        n_trials = st.number_input("Trials per model", min_value=10, max_value=200, value=50, step=10, help="How many different hyperparameter combinations Optuna will test per model.")
     with col3:
-        cv_folds = st.number_input("CV Folds", min_value=3, max_value=10, value=5)
+        cv_folds = st.number_input("CV Folds", min_value=3, max_value=10, value=5, help="Number of cross-validation splits. Higher folds give a more robust evaluation but take longer to train.")
     with col4:
-        timeout = st.number_input("Timeout per model (sec)", min_value=10, max_value=300, value=60)
+        timeout = st.number_input("Timeout per model (sec)", min_value=10, max_value=300, value=60, help="Maximum time limit (in seconds) to spend tuning a single model.")
     st.markdown('</div>', unsafe_allow_html=True)
 
     # Train button
@@ -891,8 +751,37 @@ def page_train():
         st.markdown("---")
         st.markdown('<h3 class="gradient-text-blue">Model Benchmarking Results</h3>', unsafe_allow_html=True)
 
+        with st.expander("📊 Input Classical RSM Baseline (Optional)"):
+            st.markdown("Upload your classical Design-Expert (RSM) results to benchmark against the AI models.")
+            col1, col2 = st.columns(2)
+            with col1:
+                rsm_r2 = st.number_input("RSM R² Score", min_value=-10.0, max_value=1.0, value=0.0, step=0.01, help="Enter the R-squared value reported by your classical RSM software (e.g., Design-Expert).")
+            with col2:
+                rsm_rmse = st.number_input("RSM RMSE (Error)", min_value=0.0, value=0.0, step=0.01, help="Enter the Root Mean Square Error reported by your classical RSM software.")
+            
+            if st.button("Save RSM Baseline"):
+                st.session_state.rsm_baseline = {"R²": rsm_r2, "RMSE": rsm_rmse}
+                st.success("RSM Baseline saved! It is now included in the ranking table below.")
+
         # Ranking table
         ranking_df = rank_models(st.session_state.evaluation_results)
+        
+        # Inject RSM Baseline
+        if "rsm_baseline" in st.session_state and st.session_state.rsm_baseline.get("R²", 0) != 0.0:
+            import pandas as pd
+            rsm_row = pd.DataFrame([{
+                "Model": "Classical RSM (Uploaded)",
+                "R²": st.session_state.rsm_baseline["R²"],
+                "Adj_R²": "-",
+                "RMSE": st.session_state.rsm_baseline["RMSE"],
+                "MAE": "-",
+                "MAPE_%": "-",
+                "CV_R²_mean": "-",
+                "CV_R²_std": "-",
+                "CV_RMSE_mean": "-"
+            }])
+            ranking_df = pd.concat([ranking_df, rsm_row], ignore_index=True)
+            
         st.dataframe(ranking_df, use_container_width=True)
 
         # Best model highlight
@@ -909,174 +798,28 @@ def page_train():
             </div>
             """, unsafe_allow_html=True)
 
-        # Comparison chart
-        from modules.visualization.plots import plot_model_comparison
-        fig = plot_model_comparison(st.session_state.evaluation_results)
-        st.plotly_chart(fig, use_container_width=True)
+
 
         st.markdown("<br/>", unsafe_allow_html=True)
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("🔬  Explore SHAP Explainability", use_container_width=True):
-                st.success("Please switch to the Explainability tab above.")
-                st.rerun()
-        with col2:
-            if st.button("🎯  Proceed to Optimization", use_container_width=True, type="primary"):
-                st.session_state.current_phase = "🎯 Phase 3: Optimization"
-                st.rerun()
-
-
-# ──────────────────────────────────────────────
-# Page: Explainability
-# ──────────────────────────────────────────────
-def page_explainability():
-    st.markdown('<h2 class="gradient-text">🔬 SHAP Explainability</h2>', unsafe_allow_html=True)
-
-    if st.session_state.best_model is None:
-        st.warning("⬅️ Please train models first.")
-        return
-
-    from modules.explainability.shap_analysis import compute_shap_values, shap_summary_plot, shap_dependence_plot, feature_importance_table
-
-    X = st.session_state.preprocessed["X"]
-    feature_names = st.session_state.preprocessed["feature_names"]
-    model = st.session_state.best_model
-    model_name = st.session_state.best_model_name
-
-    st.info(f"Analyzing: **{model_name}**")
-
-    if st.button("🔬  Compute SHAP Values", use_container_width=True, type="primary"):
-        with st.spinner("Computing SHAP values... This may take a moment."):
-            try:
-                shap_values = compute_shap_values(model, X, feature_names)
-                st.session_state["shap_values"] = shap_values
-                st.session_state["shap_done"] = True
-            except Exception as e:
-                st.error(f"SHAP computation failed: {str(e)}")
-                return
-
-    if "shap_values" in st.session_state:
-        shap_values = st.session_state["shap_values"]
-
-        # Feature importance table
-        st.markdown('<h3 class="gradient-text-blue">Feature Importance Ranking</h3>', unsafe_allow_html=True)
-        imp_table = feature_importance_table(shap_values, feature_names)
-        st.dataframe(imp_table, use_container_width=True)
-
-        # Summary plot
-        st.markdown("---")
-        st.markdown('<h3 class="gradient-text-blue">SHAP Summary Plot</h3>', unsafe_allow_html=True)
-        fig = shap_summary_plot(shap_values, X, feature_names)
-        st.pyplot(fig)
-
-        # Dependence plots
-        st.markdown("---")
-        st.markdown('<h3 class="gradient-text-blue">SHAP Dependence Plot</h3>', unsafe_allow_html=True)
-        selected_feature = st.selectbox("Select a feature", feature_names)
-        fig_dep = shap_dependence_plot(shap_values, selected_feature, X, feature_names)
-        st.pyplot(fig_dep)
-
-
-# ──────────────────────────────────────────────
-# Page: Visualizations
-# ──────────────────────────────────────────────
-def page_visualizations():
-    st.markdown('<h2 class="gradient-text">📊 Visualizations</h2>', unsafe_allow_html=True)
-
-    if st.session_state.best_model is None:
-        st.warning("⬅️ Please train models first.")
-        return
-
-    from modules.visualization.plots import (
-        plot_3d_surface, plot_contour, plot_pred_vs_actual,
-        plot_residuals, plot_main_effects
-    )
-
-    model = st.session_state.best_model
-    X = st.session_state.preprocessed["X"]
-    y = st.session_state.preprocessed["y"]
-    feature_names = st.session_state.preprocessed["feature_names"]
-    factor_cols = st.session_state.factor_cols
-
-    tab_names = [
-        "3D Surface", "Contour Plot", "Predicted vs Actual", "Residuals", "Factor Effects"
-    ]
-    
-    selected_plots = st.multiselect(
-        "Select Plots to Display",
-        options=tab_names,
-        default=["3D Surface", "Contour Plot", "Predicted vs Actual", "Residuals", "Factor Effects"]
-    )
-    
-    if not selected_plots:
-        st.warning("⚠️ Please select at least one plot to display.")
-        return
-        
-    tabs = st.tabs(selected_plots)
-
-    for i, plot_name in enumerate(selected_plots):
-        with tabs[i]:
-            if plot_name == "3D Surface":
-                if len(feature_names) >= 2:
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        f1 = st.selectbox("X-axis Factor", feature_names, index=0, key="surf_f1")
-                    with col2:
-                        f2_options = [f for f in feature_names if f != f1]
-                        f2 = st.selectbox("Y-axis Factor", f2_options, index=0, key="surf_f2")
-
-                    fig = plot_3d_surface(model, X, feature_names, f1, f2)
-                    st.plotly_chart(fig, use_container_width=True)
-                else:
-                    st.info("Need at least 2 factors for 3D surface plot.")
-
-            elif plot_name == "Contour Plot":
-                if len(feature_names) >= 2:
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        cf1 = st.selectbox("X-axis Factor", feature_names, index=0, key="cont_f1")
-                    with col2:
-                        cf2_options = [f for f in feature_names if f != cf1]
-                        cf2 = st.selectbox("Y-axis Factor", cf2_options, index=0, key="cont_f2")
-
-                    fig = plot_contour(model, X, feature_names, cf1, cf2)
-                    st.plotly_chart(fig, use_container_width=True)
-                else:
-                    st.info("Need at least 2 factors for contour plot.")
-
-            elif plot_name == "Predicted vs Actual":
-                y_pred = model.predict(X)
-                # Handle multi-output y for plotting
-                if y.ndim > 1 and y.shape[1] > 1:
-                    y_actual_plot = y[:, 0]
-                    y_pred_plot = y_pred[:, 0] if y_pred.ndim > 1 else y_pred
-                    st.info(f"Plotting for first response column: {st.session_state.response_cols[0]}")
-                else:
-                    y_actual_plot = y.ravel()
-                    y_pred_plot = y_pred.ravel()
-                fig = plot_pred_vs_actual(y_actual_plot, y_pred_plot)
-                st.plotly_chart(fig, use_container_width=True)
-
-            elif plot_name == "Residuals":
-                y_pred = model.predict(X)
-                if y.ndim > 1 and y.shape[1] > 1:
-                    y_actual_plot = y[:, 0]
-                    y_pred_plot = y_pred[:, 0] if y_pred.ndim > 1 else y_pred
-                else:
-                    y_actual_plot = y.ravel()
-                    y_pred_plot = y_pred.ravel()
-                fig = plot_residuals(y_actual_plot, y_pred_plot)
-                st.plotly_chart(fig, use_container_width=True)
-
-            elif plot_name == "Factor Effects":
-                fig = plot_main_effects(model, X, feature_names)
-                st.plotly_chart(fig, use_container_width=True)
-
-
-# ──────────────────────────────────────────────
-# Page: Optimize
-# ──────────────────────────────────────────────
+            st.button("➡️ Proceed to Optimization", use_container_width=True, type="primary", on_click=change_phase, args=("4️⃣ Bayesian Optimization",))
 def page_optimize():
+    class SingleObjectiveProxy:
+        def __init__(self, base_model, target_idx):
+            self.base_model = base_model
+            self.target_idx = target_idx
+        def predict_with_uncertainty(self, X):
+            mean, std = self.base_model.predict_with_uncertainty(X)
+            if mean.ndim > 1 and mean.shape[1] > 1:
+                return mean[:, self.target_idx], std[:, self.target_idx]
+            return mean, std
+        def predict(self, X):
+            mean = self.base_model.predict(X)
+            if mean.ndim > 1 and mean.shape[1] > 1:
+                return mean[:, self.target_idx]
+            return mean
+
     st.markdown('<h2 class="gradient-text">🎯 Bayesian Optimization</h2>', unsafe_allow_html=True)
 
     if st.session_state.best_model is None:
@@ -1100,11 +843,12 @@ def page_optimize():
     has_multiple_responses = len(response_cols) > 1
     opt_type = "Single Objective"
     if has_multiple_responses:
-        opt_type = st.radio("Optimization Mode", ["Single Objective", "Multi-Objective"])
+        opt_type = st.radio("Optimization Mode", ["Single Objective", "Multi-Objective"], help="Choose whether you want to optimize one specific response (e.g., just Yield) or balance multiple conflicting responses (e.g., maximizing Yield while minimizing Cost).")
     
     if opt_type == "Single Objective":
-        target_col = st.selectbox("Target Response", response_cols)
-        optimize_direction = st.selectbox("Objective Direction", ["Maximize", "Minimize"])
+        target_col = st.selectbox("Target Response", response_cols, help="Select the specific response you want the AI to optimize.")
+        target_idx = response_cols.index(target_col)
+        optimize_direction = st.selectbox("Objective Direction", ["Maximize", "Minimize"], help="Choose whether the AI should try to push the response value as high as possible or as low as possible.")
     else:
         st.markdown("**Multi-Objective Setup**")
         objectives_config = []
@@ -1119,11 +863,11 @@ def page_optimize():
     st.markdown("---")
     col1, col2, col3 = st.columns(3)
     with col1:
-        acq_func = st.selectbox("Acquisition Function", ["Expected Improvement (EI)", "Upper Confidence Bound (UCB)", "Probability of Improvement (PI)"])
+        acq_func = st.selectbox("Acquisition Function", ["Expected Improvement (EI)", "Upper Confidence Bound (UCB)", "Probability of Improvement (PI)"], help="EI: Balances exploration/exploitation (Best default). UCB: Optimistic exploration. PI: Safest improvements.")
     with col2:
-        n_recommend = st.number_input("Number of experiments to suggest", min_value=1, max_value=20, value=5)
+        n_recommend = st.number_input("Number of experiments to suggest", min_value=1, max_value=20, value=5, help="How many unique, optimal theoretical experiments the AI should recommend to you.")
     with col3:
-        n_candidates = st.number_input("Candidate pool size", min_value=1000, max_value=100000, value=20000, step=1000)
+        n_candidates = st.number_input("Candidate pool size", min_value=1000, max_value=100000, value=20000, step=1000, help="The number of simulated factor combinations the AI will test behind the scenes to find the absolute peak.")
     st.markdown('</div>', unsafe_allow_html=True)
 
     acq_map = {
@@ -1132,9 +876,75 @@ def page_optimize():
         "Probability of Improvement (PI)": "PI",
     }
 
+    with st.expander("📈 Input Classical RSM Optimal Conditions (Optional)"):
+        st.markdown("If you calculated an optimal point using Classical RSM, input it here. OptiLab will compare your classical optimum to the AI optimum.")
+        
+        if "rsm_optimum" not in st.session_state:
+            st.session_state.rsm_optimum = {}
+            
+        rsm_cols = st.columns(min(4, len(feature_names)))
+        for i, fname in enumerate(feature_names):
+            with rsm_cols[i % len(rsm_cols)]:
+                val = st.number_input(f"{fname}", value=0.0, format="%.4f", step=0.01, key=f"rsm_opt_{fname}")
+                st.session_state.rsm_optimum[fname] = float(val)
+                
+        rsm_r2 = st.number_input("R-Squared (R²) at this Optimum", value=0.0, format="%.4f", step=0.01)
+        if st.button("Save RSM Optimum"):
+            st.session_state.rsm_optimum["_rsm_r2"] = rsm_r2
+            st.success("RSM Optimum saved!")
+
+    st.markdown("---")
+    st.markdown('<h3 class="gradient-text-blue">🔍 Search Space Bounds</h3>', unsafe_allow_html=True)
+    st.markdown("State the minimum and maximum values for each continuous factor. The AI will strictly search for optimal conditions within these limits.")
+    
+    user_bounds = []
+    if "scaler" in st.session_state.preprocessed:
+        scaler = st.session_state.preprocessed["scaler"]
+        X_orig = st.session_state.preprocessed["X_original"]
+        
+        # Display inputs in columns
+        bound_cols = st.columns(min(3, len(feature_names)))
+        b_idx = 0
+        
+        for i, fname in enumerate(feature_names):
+            is_cat = False
+            for cat_col in st.session_state.factor_cols:
+                if st.session_state.variable_types.get(cat_col) == "categorical" and fname.startswith(cat_col + "_"):
+                    is_cat = True
+                    break
+            
+            if not is_cat:
+                orig_min = float(X_orig[:, i].min())
+                orig_max = float(X_orig[:, i].max())
+                
+                with bound_cols[b_idx % len(bound_cols)]:
+                    st.markdown(f"**{fname}**")
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        umin = st.number_input("Min", value=orig_min, step=0.1, key=f"min_{fname}")
+                    with c2:
+                        umax = st.number_input("Max", value=orig_max, step=0.1, key=f"max_{fname}")
+                        
+                # Transform to scaled space
+                dmin = np.zeros(len(feature_names))
+                dmin[i] = umin
+                dmax = np.zeros(len(feature_names))
+                dmax[i] = umax
+                
+                smin = scaler.transform([dmin])[0][i]
+                smax = scaler.transform([dmax])[0][i]
+                user_bounds.append((smin, smax))
+                b_idx += 1
+            else:
+                user_bounds.append((0.0, 1.0))
+    else:
+        user_bounds = list(zip(X.min(axis=0), X.max(axis=0)))
+        
+    st.markdown("---")
+
     if st.button("🎯  Run Bayesian Optimization", use_container_width=True, type="primary"):
         with st.spinner("Running Optimization..."):
-            bounds = list(zip(X.min(axis=0), X.max(axis=0)))
+            bounds = user_bounds
 
             if opt_type == "Single Objective":
                 # Determine which column index corresponds to the selected target
@@ -1147,7 +957,7 @@ def page_optimize():
                 y_best = y_target.max() if optimize_direction == "Maximize" else y_target.min()
                 
                 recommendations = recommend_experiments(
-                    model=model,
+                    model=SingleObjectiveProxy(model, target_idx),
                     bounds=bounds,
                     feature_names=feature_names,
                     y_best=y_best,
@@ -1160,7 +970,7 @@ def page_optimize():
                 from modules.optimization.multi_objective import multi_objective_recommend
                 # For multi-objective, we simulate using the same model for all objectives if we only trained one,
                 # but to be robust, we pass a list of models (here just duplicates of best_model for simplicity)
-                models = [model for _ in range(len(response_cols))]
+                models = [SingleObjectiveProxy(model, i) for i in range(len(response_cols))]
                 
                 recommendations = multi_objective_recommend(
                     models=models,
@@ -1177,23 +987,72 @@ def page_optimize():
         st.markdown("---")
         st.markdown('<h3 class="gradient-text-blue">📋 Recommended Next Experiments</h3>', unsafe_allow_html=True)
         st.markdown("Perform these experiments in your lab, then enter the results in the **🔄 Iterate** page.")
+        st.info("**Data Scientist Insight:** Bayesian Optimization uses uncertainty to find the absolute best conditions. The table below shows the specific experiments you should run next in your lab to efficiently maximize your results.")
 
         # Inverse-transform to original scale if scaler exists
         recs = st.session_state.bo_recommendations.copy()
+        if "scaler" in st.session_state.preprocessed:
+            scaler = st.session_state.preprocessed["scaler"]
+            scaled_factors = recs[feature_names].values
+            orig_factors = scaler.inverse_transform(scaled_factors)
+            for i, fname in enumerate(feature_names):
+                recs[fname] = [round(val, 4) for val in orig_factors[:, i]]
 
         st.dataframe(recs, use_container_width=True)
 
-        # Show acquisition function landscape
-        from modules.visualization.plots import plot_acquisition_landscape
-        if len(feature_names) >= 2:
+        if opt_type == "Single Objective":
             st.markdown("---")
-            st.markdown('<h3 class="gradient-text-blue">Acquisition Function Landscape</h3>', unsafe_allow_html=True)
-            fig = plot_acquisition_landscape(model, X, feature_names, acq_map[acq_func])
-            st.plotly_chart(fig, use_container_width=True)
+            st.markdown('<h3 class="gradient-text-blue">⭐ Absolute Optimal Theoretical Conditions (AI)</h3>', unsafe_allow_html=True)
+            st.markdown("According to the surrogate model's predicted response surface, setting your factors to exactly these values will yield the absolute best possible outcome.")
+            
+            from modules.optimization.bayesian_opt import generate_candidates
+            dense_candidates = generate_candidates(user_bounds, n_candidates=50000)
+            
+            target_idx = response_cols.index(target_col)
+            proxy = SingleObjectiveProxy(model, target_idx)
+            mean_preds = proxy.predict(dense_candidates)
+            
+            if optimize_direction == "Maximize":
+                best_idx = int(np.argmax(mean_preds))
+            else:
+                best_idx = int(np.argmin(mean_preds))
+                
+            best_pred = mean_preds[best_idx]
+            best_point_scaled = dense_candidates[best_idx]
+            
+            if "scaler" in st.session_state.preprocessed:
+                best_point_orig = st.session_state.preprocessed["scaler"].inverse_transform([best_point_scaled])[0]
+            else:
+                best_point_orig = best_point_scaled
+                
+            best_dict = {}
+            for f, v in zip(feature_names, best_point_orig):
+                best_dict[f] = round(float(v), 4)
+            
+            import pandas as pd
+            st.dataframe(pd.DataFrame([best_dict]), use_container_width=True)
+            st.success(f"**Predicted {target_col}:** {best_pred:.4f}")
+            
+            # Hybrid Comparison
+            if "rsm_optimum" in st.session_state and "_rsm_r2" in st.session_state.rsm_optimum:
+                st.markdown("---")
+                st.markdown('<h3 class="gradient-text-blue">⚖️ Hybrid Comparison: AI vs Classical RSM</h3>', unsafe_allow_html=True)
+                
+                comp_col1, comp_col2 = st.columns(2)
+                with comp_col1:
+                    st.markdown("**Classical Statistical Optimum (RSM)**")
+                    rsm_disp = {k: v for k, v in st.session_state.rsm_optimum.items() if k != "_rsm_r2"}
+                    st.dataframe(pd.DataFrame([rsm_disp]), use_container_width=True)
+                    st.info(f"**RSM R² Score:** {st.session_state.rsm_optimum['_rsm_r2']:.4f}")
+                    
+                with comp_col2:
+                    st.markdown("**Modern AI Optimum (ML Surrogate)**")
+                    st.dataframe(pd.DataFrame([best_dict]), use_container_width=True)
+                    st.success(f"**Predicted Response:** {best_pred:.4f}")
 
-        if st.button("🔄  Go to Iterate (Enter New Results)", use_container_width=True, type="primary"):
-            st.success("Please switch to the Iterate tab above.")
-            st.rerun()
+
+
+        st.button("🔄 Proceed to Iterate (Enter New Results)", use_container_width=True, type="primary", on_click=change_phase, args=("5️⃣ Iterate (New Results)",))
 
 
 # ──────────────────────────────────────────────
@@ -1223,7 +1082,7 @@ def page_iterate():
     st.markdown("---")
     st.markdown('<h3 class="gradient-text-blue">Enter New Experimental Results</h3>', unsafe_allow_html=True)
 
-    n_new = st.number_input("Number of new experiments to enter", min_value=1, max_value=20, value=1)
+    n_new = st.number_input("Number of new experiments to enter", min_value=1, max_value=20, value=1, help="How many new physical lab results you want to feed back into the AI to improve its accuracy.")
 
     new_data = {}
     for col in feature_names + response_cols:
@@ -1269,17 +1128,9 @@ def page_iterate():
         # Auto-suggest new recommendations
         st.session_state.bo_recommendations = None  # Reset so optimization can be rerun
 
-        if st.button("🎯  Run New Optimization", use_container_width=True):
-            st.session_state.current_phase = "🎯 Phase 3: Optimization"
-            st.rerun()
+        st.button("➡️ Proceed to Report & History", use_container_width=True, type="primary", on_click=change_phase, args=("6️⃣ Report & History",))
 
-    # Convergence plot
-    if st.session_state.bo_history:
-        st.markdown("---")
-        st.markdown('<h3 class="gradient-text-blue">Convergence History</h3>', unsafe_allow_html=True)
-        from modules.visualization.plots import plot_convergence
-        fig = plot_convergence(st.session_state.bo_history)
-        st.plotly_chart(fig, use_container_width=True)
+
 
 
 # ──────────────────────────────────────────────
@@ -1296,7 +1147,7 @@ def page_report():
 
     st.markdown("""
     Generate a publication-ready PDF report containing your full optimization workflow:
-    dataset summary, model benchmarking, SHAP analysis, optimization results, and recommended conditions.
+    dataset summary, model benchmarking, optimization results, and recommended conditions.
     """)
 
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
@@ -1306,9 +1157,9 @@ def page_report():
     sections = [
         "✅ Dataset Summary (factors, responses, sample size)",
         "✅ Preprocessing Configuration",
-        "✅ Model Benchmarking Table (all 7 models)",
+        "✅ Gaussian Process Evaluation Metrics",
         "✅ Best Model Details & Tuned Hyperparameters",
-        "✅ SHAP Feature Importance",
+        
         "✅ Optimization Results & Recommended Conditions",
         "✅ Convergence History",
         "✅ All Plots (3D Surface, Contour, Predicted vs Actual)",
@@ -1402,42 +1253,14 @@ def page_history():
 # ──────────────────────────────────────────────
 # Phase Routers
 # ──────────────────────────────────────────────
-def phase_data_prep():
-    tab1, tab2 = st.tabs(["📄 Upload Data", "🧹 Preprocessing"])
-    with tab1:
-        page_upload()
-    with tab2:
-        page_preprocessing()
-
-def phase_modeling():
-    tab1, tab2, tab3 = st.tabs(["🤖 Train Models", "📊 Visualizations", "🔬 Explainability"])
-    with tab1:
-        page_train()
-    with tab2:
-        page_visualizations()
-    with tab3:
-        page_explainability()
-
-def phase_optimization():
-    tab1, tab2 = st.tabs(["🎯 Bayesian Optimization", "🔄 Iterate"])
-    with tab1:
-        page_optimize()
-    with tab2:
-        page_iterate()
-
-def phase_export():
-    tab1, tab2 = st.tabs(["📄 Generate Report", "📚 History"])
-    with tab1:
-        page_report()
-    with tab2:
-        page_history()
-
 PHASE_FUNCTIONS = {
     "🏠 Home": page_home,
-    "📊 Phase 1: Data Preparation": phase_data_prep,
-    "🤖 Phase 2: Modeling & Insights": phase_modeling,
-    "🎯 Phase 3: Optimization": phase_optimization,
-    "📄 Phase 4: Export & History": phase_export,
+    "1️⃣ Data Upload": page_upload,
+    "2️⃣ Preprocessing": page_preprocessing,
+    "3️⃣ Model Training": page_train,
+    "4️⃣ Bayesian Optimization": page_optimize,
+    "5️⃣ Iterate (New Results)": page_iterate,
+    "6️⃣ Report & History": page_history,
 }
 
 # Render the selected phase
@@ -1449,6 +1272,6 @@ st.markdown("---")
 st.markdown('''
 <div style="text-align: center; color: #4a5568; font-size: 0.8rem; padding: 12px;">
     🧬 OptiLab v1.0 — AI-Assisted Experimental Optimization Platform<br/>
-    Built with Streamlit • scikit-learn • Optuna • SHAP • Plotly
+    Built with Streamlit • scikit-learn • Optuna • Plotly
 </div>
 ''', unsafe_allow_html=True)

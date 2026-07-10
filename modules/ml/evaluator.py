@@ -48,6 +48,12 @@ def evaluate_model(model, X, y, cv_folds: int = 5) -> dict:
 
     cv_r2_scores = []
     cv_rmse_scores = []
+    
+    # Store out-of-fold predictions
+    if len(y.shape) > 1 and y.shape[1] > 1:
+        y_cv_preds = np.zeros_like(y, dtype=float)
+    else:
+        y_cv_preds = np.zeros(len(y), dtype=float)
 
     try:
         kf = KFold(n_splits=actual_folds, shuffle=True, random_state=42)
@@ -61,18 +67,28 @@ def evaluate_model(model, X, y, cv_folds: int = 5) -> dict:
             fresh_model = get_all_models().get(model_name)
 
             if fresh_model is None:
-                # Fallback: use the trained model's predictions
                 break
 
             fresh_model.train(X_train, y_train, params=model.params)
             y_val_pred = fresh_model.predict(X_val)
 
-            cv_r2 = r2_score(y_val, y_val_pred)
-            cv_rmse = np.sqrt(mean_squared_error(y_val, y_val_pred))
+            if len(y.shape) > 1 and y.shape[1] > 1:
+                y_cv_preds[val_idx, :] = y_val_pred
+            else:
+                y_cv_preds[val_idx] = y_val_pred
 
+            # Keep individual scores for variance estimation
+            cv_r2 = r2_score(y_val, y_val_pred)
             cv_r2_scores.append(cv_r2)
-            cv_rmse_scores.append(cv_rmse)
-    except Exception:
+            cv_rmse_scores.append(np.sqrt(mean_squared_error(y_val, y_val_pred)))
+            
+        # Global out-of-fold metrics
+        global_cv_r2 = r2_score(y, y_cv_preds)
+        global_cv_rmse = np.sqrt(mean_squared_error(y, y_cv_preds))
+        
+    except Exception as e:
+        global_cv_r2 = r2
+        global_cv_rmse = rmse
         cv_r2_scores = [r2]
         cv_rmse_scores = [rmse]
 
@@ -82,9 +98,9 @@ def evaluate_model(model, X, y, cv_folds: int = 5) -> dict:
         "RMSE": round(rmse, 4),
         "MAE": round(mae, 4),
         "MAPE_%": round(mape, 2),
-        "CV_R²_mean": round(np.mean(cv_r2_scores), 4),
+        "CV_R²_mean": round(global_cv_r2, 4),
         "CV_R²_std": round(np.std(cv_r2_scores), 4),
-        "CV_RMSE_mean": round(np.mean(cv_rmse_scores), 4),
+        "CV_RMSE_mean": round(global_cv_rmse, 4),
     }
 
 
