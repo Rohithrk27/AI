@@ -1,6 +1,12 @@
+<<<<<<< HEAD
 # 🧬 OptiLab — AI-Assisted Experimental Optimization Platform
 
 **OptiLab** is a domain-agnostic, AI-assisted experimental optimization platform. It helps researchers find optimal experimental conditions with fewer experiments by combining machine learning with Bayesian Optimization.
+=======
+# 🧬 AI-Assisted Experimental Optimization Platform
+
+This is a domain-agnostic, AI-assisted experimental optimization platform. It helps researchers find optimal experimental conditions with fewer experiments by combining machine learning with Bayesian Optimization.
+>>>>>>> origin/master
 
 ## ✨ Features
 
@@ -9,7 +15,6 @@
 - **⚙️ Auto Hyperparameter Tuning** — Optuna-powered optimization for every model
 - **🎯 Bayesian Optimization** — EI, UCB, and PI acquisition functions to recommend next experiments
 - **🔬 SHAP Explainability** — Understand which variables drive your response
-- **📊 Interactive Visualizations** — 3D response surfaces, contour plots, convergence charts (Plotly)
 - **🎛️ Multi-Objective Optimization** — Optimize multiple responses simultaneously with Pareto front
 - **📄 Publication Reports** — Export PDF reports with ANOVA tables, model comparisons, and optimal conditions
 - **💾 Experiment History** — SQLite persistence for past sessions and model versions
