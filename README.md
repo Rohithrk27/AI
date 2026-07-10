@@ -1,4 +1,4 @@
-# 🧬 OptiML — AI-Assisted Experimental Optimization Platform
+# 🧬 AI-Assisted Experimental Optimization Platform
 
 **OptiML** is a domain-agnostic, AI-assisted experimental optimization platform. It helps researchers find optimal experimental conditions with fewer experiments by combining machine learning with Bayesian Optimization.
 
