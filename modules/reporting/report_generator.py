@@ -15,15 +15,15 @@ import matplotlib.pyplot as plt
 from fpdf import FPDF
 
 
-class OptiMLReport(FPDF):
-    """Custom PDF report with OptiML branding."""
+class OptiLabReport(FPDF):
+    """Custom PDF report with OptiLab branding."""
 
     def header(self):
         self.set_font("Helvetica", "B", 10)
-        self.set_text_color(102, 126, 234)
-        self.cell(0, 8, "OptiML - AI-Assisted Experimental Optimization Report", align="R")
+        self.set_text_color(67, 233, 123)
+        self.cell(0, 8, "OptiLab — AI-Assisted Experimental Optimization Report", align="R")
         self.ln(10)
-        self.set_draw_color(102, 126, 234)
+        self.set_draw_color(67, 233, 123)
         self.line(10, self.get_y(), self.w - 10, self.get_y())
         self.ln(5)
 
@@ -31,11 +31,11 @@ class OptiMLReport(FPDF):
         self.set_y(-15)
         self.set_font("Helvetica", "I", 8)
         self.set_text_color(150, 150, 150)
-        self.cell(0, 10, f"Page {self.page_no()}/{{nb}} | Generated {datetime.now().strftime('%Y-%m-%d %H:%M')}", align="C")
+        self.cell(0, 10, f"Page {self.page_no()}/{{nb}} | Generated {datetime.now().strftime('%Y-%m-%d %H:%M')} | OptiLab v2.0", align="C")
 
     def section_title(self, title):
         self.set_font("Helvetica", "B", 14)
-        self.set_text_color(102, 126, 234)
+        self.set_text_color(67, 233, 123)
         self.cell(0, 10, title, new_x="LMARGIN", new_y="NEXT")
         self.ln(2)
 
@@ -54,8 +54,8 @@ class OptiMLReport(FPDF):
     def add_table(self, df, col_widths=None):
         """Add a DataFrame as a table to the PDF."""
         self.set_font("Helvetica", "B", 9)
-        self.set_fill_color(102, 126, 234)
-        self.set_text_color(255, 255, 255)
+        self.set_fill_color(67, 233, 123)
+        self.set_text_color(0, 0, 0)
 
         cols = list(df.columns)
         n_cols = len(cols)
@@ -85,7 +85,7 @@ class OptiMLReport(FPDF):
 
                 # Alternate row colors
                 if _ % 2 == 0:
-                    self.set_fill_color(245, 245, 250)
+                    self.set_fill_color(240, 250, 244)
                 else:
                     self.set_fill_color(255, 255, 255)
 
@@ -105,7 +105,7 @@ def generate_report(report_data: dict) -> bytes:
     Returns:
         bytes: PDF content
     """
-    pdf = OptiMLReport()
+    pdf = OptiLabReport()
     pdf.alias_nb_pages()
     pdf.set_auto_page_break(auto=True, margin=20)
 
@@ -114,9 +114,9 @@ def generate_report(report_data: dict) -> bytes:
     # ──────────────────────────────────────
     pdf.add_page()
     pdf.ln(40)
-    pdf.set_font("Helvetica", "B", 28)
-    pdf.set_text_color(102, 126, 234)
-    pdf.cell(0, 15, "OptiML", align="C", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font("Helvetica", "B", 32)
+    pdf.set_text_color(67, 233, 123)
+    pdf.cell(0, 15, "OptiLab", align="C", new_x="LMARGIN", new_y="NEXT")
 
     pdf.set_font("Helvetica", "", 14)
     pdf.set_text_color(100, 100, 100)
@@ -128,10 +128,33 @@ def generate_report(report_data: dict) -> bytes:
     pdf.cell(0, 8, f"Generated: {datetime.now().strftime('%B %d, %Y at %H:%M')}", align="C", new_x="LMARGIN", new_y="NEXT")
 
     # ──────────────────────────────────────
-    # 1. Dataset Summary
+    # Methodology
     # ──────────────────────────────────────
     pdf.add_page()
-    pdf.section_title("1. Dataset Summary")
+    pdf.section_title("1. Methodology")
+    pdf.body_text(
+        "OptiLab employs a Gaussian Process (GP) surrogate model combined with Bayesian Optimization "
+        "to find optimal experimental conditions. The GP is a non-parametric, probabilistic model that "
+        "smoothly interpolates between data points while intrinsically penalizing overly complex curves."
+    )
+    pdf.body_text(
+        "Unlike classical Response Surface Methodology (RSM), which forces data into a rigid quadratic "
+        "polynomial equation, the GP captures complex non-linear relationships in the experimental "
+        "landscape. Because the GP outputs both a prediction (mean) and a mathematical uncertainty "
+        "(standard deviation), Bayesian Optimization can use Acquisition Functions (Expected Improvement, "
+        "Upper Confidence Bound, Probability of Improvement) to intelligently recommend the next "
+        "experiment to run."
+    )
+    pdf.body_text(
+        "Hyperparameters of the GP (kernel type, noise level, restarts) are automatically tuned using "
+        "the Optuna framework with cross-validation, ensuring the best possible fit for the given data."
+    )
+
+    # ──────────────────────────────────────
+    # 2. Dataset Summary
+    # ──────────────────────────────────────
+    pdf.add_page()
+    pdf.section_title("2. Dataset Summary")
 
     raw_data = report_data.get("raw_data")
     factor_cols = report_data.get("factor_cols", [])
@@ -151,10 +174,10 @@ def generate_report(report_data: dict) -> bytes:
         pdf.add_table(stats)
 
     # ──────────────────────────────────────
-    # 2. Model Benchmarking
+    # 3. Model Benchmarking
     # ──────────────────────────────────────
     pdf.add_page()
-    pdf.section_title("2. Model Benchmarking Results")
+    pdf.section_title("3. Gaussian Process Evaluation")
 
     eval_results = report_data.get("evaluation_results", {})
     if eval_results:
@@ -164,8 +187,8 @@ def generate_report(report_data: dict) -> bytes:
                 continue
             rows.append({
                 "Model": name,
-                "R²": metrics.get("R²", ""),
-                "CV R²": metrics.get("CV_R²_mean", ""),
+                "R2": metrics.get("R2", metrics.get("R²", "")),
+                "CV R2": metrics.get("CV_R2_mean", metrics.get("CV_R²_mean", "")),
                 "RMSE": metrics.get("RMSE", ""),
                 "MAE": metrics.get("MAE", ""),
             })
@@ -183,15 +206,15 @@ def generate_report(report_data: dict) -> bytes:
         pdf.subsection_title("Optuna Hyperparameter Tuning")
         for name, result in tuning_results.items():
             if "best_params" in result and result["best_params"]:
-                pdf.body_text(f"{name}: Best CV R² = {result.get('best_cv_score', 'N/A'):.4f}")
+                pdf.body_text(f"{name}: Best CV R2 = {result.get('best_cv_score', 'N/A'):.4f}")
                 params_str = ", ".join(f"{k}={v}" for k, v in list(result["best_params"].items())[:5])
                 pdf.body_text(f"  Parameters: {params_str}")
 
     # ──────────────────────────────────────
-    # 3. Optimization Results
+    # 4. Optimization Results
     # ──────────────────────────────────────
     pdf.add_page()
-    pdf.section_title("3. Optimization Results")
+    pdf.section_title("4. Optimization Results")
 
     bo_recs = report_data.get("bo_recommendations")
     if bo_recs is not None and len(bo_recs) > 0:
@@ -218,28 +241,30 @@ def generate_report(report_data: dict) -> bytes:
             pdf.body_text(f"  Iteration {h['iteration']}: Best = {h['best_value']:.4f} ({h.get('n_experiments', '?')} experiments)")
 
     # ──────────────────────────────────────
-    # 4. Conclusion
+    # 5. Conclusion
     # ──────────────────────────────────────
     pdf.add_page()
-    pdf.section_title("4. Summary & Conclusions")
+    pdf.section_title("5. Summary & Conclusions")
     pdf.body_text(
-        "This report was generated by OptiML, an AI-assisted experimental optimization platform. "
+        "This report was generated by OptiLab, an AI-assisted experimental optimization platform. "
         "The platform trained a Gaussian Process surrogate model on the provided experimental data, "
         "automatically tuned hyperparameters using Optuna, and used Bayesian Optimization to recommend "
         "optimal experimental conditions."
     )
 
     if report_data.get("best_model_name"):
-        pdf.body_text(f"The best-performing model was {report_data['best_model_name']}.")
+        pdf.body_text(f"The surrogate model used was: {report_data['best_model_name']}.")
 
     if report_data.get("iteration_count", 0) > 0:
         pdf.body_text(
-            f"A total of {report_data['iteration_count']} optimization iterations were performed, "
-            f"progressively improving the model's predictions."
+            f"A total of {report_data['iteration_count']} active learning iterations were performed, "
+            f"progressively improving the model's predictions through new experimental data."
         )
 
     pdf.ln(10)
-    pdf.body_text("— End of Report —")
+    pdf.set_font("Helvetica", "I", 10)
+    pdf.set_text_color(100, 100, 100)
+    pdf.cell(0, 8, "— End of Report —", align="C")
 
     # Output
     return pdf.output()

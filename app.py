@@ -40,61 +40,192 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
 
-    /* Global */
+    /* ═══════════════════════════════════════
+       ANIMATIONS
+       ═══════════════════════════════════════ */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(24px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulseGlow {
+        0%, 100% { box-shadow: 0 4px 15px rgba(67, 233, 123, 0.3); }
+        50%      { box-shadow: 0 4px 30px rgba(67, 233, 123, 0.55); }
+    }
+    @keyframes gradientShift {
+        0%   { background-position: 0% 50%; }
+        50%  { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    @keyframes borderRotate {
+        0%   { --angle: 0deg; }
+        100% { --angle: 360deg; }
+    }
+    @keyframes floatIn {
+        from { opacity: 0; transform: translateY(12px) scale(0.97); }
+        to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes shimmer {
+        0%   { background-position: -200% center; }
+        100% { background-position: 200% center; }
+    }
+    @keyframes dotPulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(67, 233, 123, 0.5); }
+        50%      { box-shadow: 0 0 0 6px rgba(67, 233, 123, 0); }
+    }
+
+    /* ═══════════════════════════════════════
+       GLOBAL TYPOGRAPHY
+       ═══════════════════════════════════════ */
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
     }
-    
     h1, h2, h3, h4, h5, h6 {
         font-family: 'Outfit', sans-serif !important;
+        letter-spacing: -0.3px;
     }
+    h2 { font-size: 2rem !important; }
+    h3 { font-size: 1.35rem !important; }
 
-    /* Main background gradient - Deeper space look */
+    /* ═══════════════════════════════════════
+       ANIMATED BACKGROUND
+       ═══════════════════════════════════════ */
     .stApp {
         background: radial-gradient(circle at 50% 0%, #1a2333 0%, #0a0e17 60%, #05070a 100%);
     }
-
-    /* Sidebar styling */
-    section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #0f1522 0%, #0a0e17 100%);
-        border-right: 1px solid rgba(67, 233, 123, 0.15);
+    .stApp::before {
+        content: '';
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background:
+            radial-gradient(ellipse 600px 300px at 20% 15%, rgba(67,233,123,0.04), transparent),
+            radial-gradient(ellipse 500px 400px at 80% 80%, rgba(56,249,215,0.03), transparent),
+            radial-gradient(ellipse 400px 250px at 60% 40%, rgba(96,165,250,0.03), transparent);
+        background-size: 200% 200%;
+        animation: gradientShift 20s ease infinite;
+        pointer-events: none;
+        z-index: 0;
     }
 
+    /* ═══════════════════════════════════════
+       PAGE CONTENT ANIMATION
+       ═══════════════════════════════════════ */
+    .main .block-container {
+        animation: fadeInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    /* ═══════════════════════════════════════
+       SIDEBAR
+       ═══════════════════════════════════════ */
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #0f1522 0%, #0a0e17 100%);
+        border-right: 1px solid rgba(67, 233, 123, 0.12);
+    }
     section[data-testid="stSidebar"] .stRadio > label {
         color: #94a3b8 !important;
         font-weight: 500;
         padding: 8px 12px;
-        border-radius: 8px;
-        transition: all 0.2s ease;
+        border-radius: 10px;
+        transition: all 0.25s ease;
+        border-left: 3px solid transparent;
     }
-    
-    /* Active state for radio conceptually (streamlit applies specific classes but we can target hover) */
     section[data-testid="stSidebar"] .stRadio > label:hover {
-        background: rgba(67, 233, 123, 0.05);
+        background: rgba(67, 233, 123, 0.06);
         color: #e2e8f0 !important;
+        border-left-color: rgba(67, 233, 123, 0.4);
     }
 
-    /* Glassmorphism cards - Frosted glass */
+    /* Sidebar stepper styles */
+    .stepper-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 0;
+        position: relative;
+    }
+    .stepper-dot {
+        width: 10px; height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        transition: all 0.3s ease;
+    }
+    .stepper-dot.completed {
+        background: #43e97b;
+        box-shadow: 0 0 8px rgba(67, 233, 123, 0.5);
+    }
+    .stepper-dot.active {
+        background: #43e97b;
+        animation: dotPulse 1.5s ease-in-out infinite;
+    }
+    .stepper-dot.locked {
+        background: #334155;
+        border: 1px solid #475569;
+    }
+    .stepper-label {
+        font-size: 0.78rem;
+        color: #94a3b8;
+        font-weight: 500;
+    }
+    .stepper-label.active {
+        color: #43e97b;
+        font-weight: 600;
+    }
+    .stepper-label.completed {
+        color: #6ee7a0;
+    }
+    .stepper-line {
+        width: 2px; height: 14px;
+        background: #1e293b;
+        margin-left: 4px;
+    }
+    .stepper-line.completed {
+        background: rgba(67, 233, 123, 0.4);
+    }
+
+    /* ═══════════════════════════════════════
+       GLASSMORPHISM CARDS — Rotating Border
+       ═══════════════════════════════════════ */
     .glass-card {
         background: rgba(17, 24, 39, 0.6);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.06);
         border-top: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 20px;
         padding: 24px;
         margin: 16px 0;
         box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                    box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                    border-color 0.35s ease;
+        animation: floatIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+        position: relative;
     }
-
     .glass-card:hover {
         transform: translateY(-4px);
-        box-shadow: 0 20px 40px -10px rgba(67, 233, 123, 0.1);
-        border: 1px solid rgba(67, 233, 123, 0.2);
+        box-shadow: 0 20px 50px -10px rgba(67, 233, 123, 0.12);
+        border-color: rgba(67, 233, 123, 0.25);
+    }
+    .glass-card::after {
+        content: '';
+        position: absolute;
+        inset: -1px;
+        border-radius: 21px;
+        padding: 1px;
+        background: conic-gradient(from 0deg, transparent 60%, rgba(67,233,123,0.3) 80%, transparent 100%);
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor; mask-composite: exclude;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+        pointer-events: none;
+        animation: borderRotate 4s linear infinite;
+    }
+    .glass-card:hover::after {
+        opacity: 1;
     }
 
-    /* Neon Gradient text */
+    /* ═══════════════════════════════════════
+       GRADIENT TEXT
+       ═══════════════════════════════════════ */
     .gradient-text {
         background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
         -webkit-background-clip: text;
@@ -102,44 +233,57 @@ st.markdown("""
         background-clip: text;
         font-weight: 800;
         letter-spacing: -0.5px;
-        text-shadow: 0 0 30px rgba(67, 233, 123, 0.3);
     }
-
     .gradient-text-blue {
         background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
         font-weight: 700;
-        letter-spacing: -0.5px;
+        letter-spacing: -0.3px;
     }
 
-    /* Customizing Streamlit Core Components */
-    
-    /* Primary Buttons Glow */
+    /* ═══════════════════════════════════════
+       PRIMARY BUTTONS — Pulsing Glow
+       ═══════════════════════════════════════ */
     [data-testid="baseButton-primary"] {
         background: linear-gradient(135deg, #43e97b 0%, #22c55e 100%) !important;
         border: none !important;
         color: #000000 !important;
         font-weight: 600 !important;
+        font-family: 'Inter', sans-serif !important;
         border-radius: 12px !important;
-        box-shadow: 0 4px 15px rgba(67, 233, 123, 0.3) !important;
-        transition: all 0.3s ease !important;
+        animation: pulseGlow 2.5s ease-in-out infinite !important;
+        transition: transform 0.25s ease, box-shadow 0.25s ease !important;
     }
-    
     [data-testid="baseButton-primary"]:hover {
-        transform: translateY(-2px) scale(1.02);
-        box-shadow: 0 8px 25px rgba(67, 233, 123, 0.5) !important;
+        transform: translateY(-2px) scale(1.02) !important;
+        box-shadow: 0 8px 30px rgba(67, 233, 123, 0.5) !important;
+        animation: none !important;
     }
 
-    /* Dataframes/Tables rounded */
+    /* Secondary buttons */
+    [data-testid="baseButton-secondary"] {
+        border: 1px solid rgba(67, 233, 123, 0.25) !important;
+        color: #94a3b8 !important;
+        border-radius: 10px !important;
+        transition: all 0.25s ease !important;
+    }
+    [data-testid="baseButton-secondary"]:hover {
+        border-color: rgba(67, 233, 123, 0.5) !important;
+        color: #e2e8f0 !important;
+        background: rgba(67, 233, 123, 0.06) !important;
+    }
+
+    /* ═══════════════════════════════════════
+       DATAFRAMES & EXPANDERS
+       ═══════════════════════════════════════ */
     [data-testid="stDataFrame"] {
         border-radius: 12px;
         overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        animation: floatIn 0.4s ease both;
     }
-    
-    /* Expanders styling */
     [data-testid="stExpander"] {
         background: rgba(17, 24, 39, 0.4);
         border: 1px solid rgba(255, 255, 255, 0.05);
@@ -150,78 +294,166 @@ st.markdown("""
         background: rgba(255, 255, 255, 0.02);
     }
 
-    /* Hero section */
+    /* ═══════════════════════════════════════
+       HERO SECTION
+       ═══════════════════════════════════════ */
     .hero-container {
         text-align: center;
-        padding: 60px 20px;
+        padding: 60px 20px 40px;
+        animation: fadeInUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
     }
-
     .hero-title {
-        font-size: 4rem;
+        font-size: 4.5rem;
         font-weight: 800;
         margin-bottom: 0px;
         font-family: 'Outfit', sans-serif;
+        letter-spacing: -2px;
     }
-
     .hero-subtitle {
-        font-size: 1.25rem;
+        font-size: 1.2rem;
         color: #94a3b8;
         font-weight: 400;
-        margin-top: 10px;
+        margin-top: 12px;
         margin-bottom: 40px;
+        letter-spacing: 0.3px;
     }
 
     /* Feature pills */
     .feature-pill {
         display: inline-block;
         padding: 6px 16px;
-        background: rgba(67, 233, 123, 0.1);
-        border: 1px solid rgba(67, 233, 123, 0.3);
+        background: rgba(67, 233, 123, 0.08);
+        border: 1px solid rgba(67, 233, 123, 0.25);
         border-radius: 20px;
         color: #43e97b;
-        font-size: 0.85rem;
+        font-size: 0.82rem;
         font-weight: 600;
         margin: 0 6px;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 1.2px;
+        transition: all 0.25s ease;
+    }
+    .feature-pill:hover {
+        background: rgba(67, 233, 123, 0.15);
+        border-color: rgba(67, 233, 123, 0.5);
+        transform: translateY(-1px);
     }
 
-    /* Workflow pipeline */
+    /* ═══════════════════════════════════════
+       WORKFLOW PIPELINE
+       ═══════════════════════════════════════ */
     .workflow-step {
-        padding: 12px 20px;
-        background: rgba(15, 23, 42, 0.6);
+        padding: 14px 22px;
+        background: rgba(15, 23, 42, 0.55);
         border-left: 4px solid;
-        border-radius: 8px;
-        margin-bottom: 12px;
+        border-radius: 10px;
+        margin-bottom: 10px;
         font-weight: 500;
         display: flex;
         align-items: center;
         color: #f8fafc;
-        transition: transform 0.2s ease;
+        transition: transform 0.25s ease, background 0.25s ease;
+        animation: floatIn 0.4s ease both;
     }
     .workflow-step:hover {
-        transform: translateX(5px);
-        background: rgba(30, 41, 59, 0.8);
+        transform: translateX(6px);
+        background: rgba(30, 41, 59, 0.75);
     }
-
     .workflow-arrow {
         text-align: center;
-        color: #475569;
-        margin-bottom: 12px;
-        font-size: 1.2rem;
+        color: #334155;
+        margin-bottom: 8px;
+        font-size: 1rem;
     }
 
-    /* Minimal metric cards */
+    /* ═══════════════════════════════════════
+       METRIC CARDS
+       ═══════════════════════════════════════ */
     .metric-card {
         background: rgba(15, 23, 42, 0.5);
         border: 1px solid rgba(255, 255, 255, 0.05);
-        padding: 16px;
-        border-radius: 12px;
+        padding: 18px;
+        border-radius: 14px;
         text-align: center;
-        transition: background 0.3s;
+        transition: all 0.3s ease;
+        animation: floatIn 0.4s ease both;
     }
     .metric-card:hover {
-        background: rgba(30, 41, 59, 0.8);
+        background: rgba(30, 41, 59, 0.7);
+        border-color: rgba(67, 233, 123, 0.15);
+        transform: translateY(-2px);
+    }
+
+    /* ═══════════════════════════════════════
+       PROGRESS / LOADING HELPERS
+       ═══════════════════════════════════════ */
+    .progress-checklist {
+        list-style: none;
+        padding: 0;
+        margin: 10px 0;
+    }
+    .progress-checklist li {
+        padding: 6px 0;
+        font-size: 0.92rem;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        animation: floatIn 0.35s ease both;
+    }
+    .progress-checklist li.done { color: #43e97b; }
+    .progress-checklist li.active { color: #60a5fa; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .mini-spinner {
+        display: inline-block;
+        width: 14px; height: 14px;
+        border: 2px solid rgba(67, 233, 123, 0.2);
+        border-top-color: #43e97b;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    /* Success banner */
+    .success-banner {
+        background: linear-gradient(135deg, rgba(67,233,123,0.1) 0%, rgba(56,249,215,0.08) 100%);
+        border: 1px solid rgba(67, 233, 123, 0.3);
+        border-radius: 14px;
+        padding: 20px 24px;
+        text-align: center;
+        animation: floatIn 0.5s ease both;
+    }
+    .success-banner .big-score {
+        font-family: 'Outfit', sans-serif;
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #43e97b, #38f9d7);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    /* ═══════════════════════════════════════
+       FOOTER
+       ═══════════════════════════════════════ */
+    .optilab-footer {
+        text-align: center;
+        padding: 16px 0 8px;
+        color: #334155;
+        font-size: 0.78rem;
+        letter-spacing: 0.5px;
+    }
+    .optilab-footer .version-badge {
+        display: inline-block;
+        padding: 2px 10px;
+        background: rgba(67, 233, 123, 0.08);
+        border: 1px solid rgba(67, 233, 123, 0.15);
+        border-radius: 12px;
+        color: #43e97b;
+        font-size: 0.7rem;
+        font-weight: 600;
+        margin-left: 6px;
+        letter-spacing: 0.8px;
     }
 
 </style>
@@ -274,7 +506,7 @@ init_session_state()
 # ──────────────────────────────────────────────
 PHASES = [
     "🏠 Home",
-    "1️⃣ Data Upload",
+    "1️⃣ Data Input & DOE",
     "2️⃣ Preprocessing",
     "3️⃣ Model Training",
     "4️⃣ Bayesian Optimization",
@@ -290,10 +522,10 @@ if "current_phase" not in st.session_state:
 
 with st.sidebar:
     st.markdown('''
-    <div style="text-align: center; padding: 20px 0 10px 0;">
-        <div style="font-size: 2.5rem;">🧬</div>
-        <div class="gradient-text" style="font-size: 1.8rem;">OptiLab</div>
-        <div style="color: #718096; font-size: 0.8rem; margin-top: 4px;">AI Experimental Optimizer</div>
+    <div style="text-align: center; padding: 24px 0 12px 0;">
+        <div style="font-size: 2.8rem;">🧬</div>
+        <div class="gradient-text" style="font-size: 1.9rem; letter-spacing: -1px;">OptiLab</div>
+        <div style="color: #475569; font-size: 0.75rem; margin-top: 6px; letter-spacing: 1.5px; text-transform: uppercase;">AI Experimental Optimizer</div>
     </div>
     ''', unsafe_allow_html=True)
 
@@ -308,19 +540,46 @@ with st.sidebar:
 
     st.markdown("---")
 
-    # Quick status panel
-    st.markdown("##### 📊 Session Status")
-    data_status = "✅" if st.session_state.raw_data is not None else "⬜"
-    prep_status = "✅" if st.session_state.preprocessed is not None else "⬜"
-    model_status = "✅" if st.session_state.best_model is not None else "⬜"
-    opt_status = "✅" if st.session_state.bo_recommendations is not None else "⬜"
+    # Animated progress stepper
+    stepper_steps = [
+        ("Data Upload", st.session_state.raw_data is not None),
+        ("Preprocessed", st.session_state.preprocessed is not None),
+        ("GP Trained", st.session_state.best_model is not None),
+        ("Optimized", st.session_state.bo_recommendations is not None),
+    ]
 
-    st.markdown(f'''
-    {data_status} Data loaded  
-    {prep_status} Preprocessed  
-    {model_status} Models trained  
-    {opt_status} Optimized  
-    ''')
+    stepper_html = '<div style="padding: 0 8px;">'
+    stepper_html += '<div style="font-size: 0.7rem; color: #475569; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; font-weight: 600;">Progress</div>'
+
+    for i, (label, is_done) in enumerate(stepper_steps):
+        if is_done:
+            dot_class = "completed"
+            label_class = "completed"
+        elif i == 0 or stepper_steps[i-1][1]:
+            dot_class = "active"
+            label_class = "active"
+        else:
+            dot_class = "locked"
+            label_class = ""
+
+        stepper_html += f'<div class="stepper-item"><div class="stepper-dot {dot_class}"></div><span class="stepper-label {label_class}">{"✓ " if is_done else ""}{label}</span></div>'
+        if i < len(stepper_steps) - 1:
+            line_class = "completed" if is_done else ""
+            stepper_html += f'<div class="stepper-line {line_class}"></div>'
+
+    stepper_html += '</div>'
+    st.markdown(stepper_html, unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    # Reset session button
+    def reset_session():
+        for key in list(st.session_state.keys()):
+            if key != "current_phase":
+                del st.session_state[key]
+        st.session_state.current_phase = "🏠 Home"
+
+    st.button("🔄 Reset Session", use_container_width=True, on_click=reset_session)
 
 
 # ──────────────────────────────────────────────
@@ -381,7 +640,7 @@ def page_home():
     # Call to action
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
-        st.button("🚀 Get Started — Upload Data", use_container_width=True, type="primary", on_click=change_phase, args=("1️⃣ Data Upload",))
+        st.button("🚀 Get Started", use_container_width=True, type="primary", on_click=change_phase, args=("1️⃣ Data Input & DOE",))
 
     # Domain examples
     st.markdown("---")
@@ -407,92 +666,150 @@ def page_home():
 # Page: Upload Data
 # ──────────────────────────────────────────────
 def page_upload():
-    st.markdown('<h2 class="gradient-text">📄 Upload Experimental Data</h2>', unsafe_allow_html=True)
-    st.markdown("Upload your experimental data from CSV, Excel, or native RSM software exports (Design-Expert, Minitab, JMP).")
+    st.markdown('<h2 class="gradient-text">📄 Data Input & DOE</h2>', unsafe_allow_html=True)
+    st.markdown("Upload your experimental data or generate a new Design of Experiments (DOE) matrix.")
 
     # Import modules
     from modules.data.loader import load_file
     from modules.data.rsm_parsers import smart_import, detect_source_format
     from modules.data.validator import detect_variable_types, validate_dataset, compute_statistics
+    from modules.data.doe_generator import generate_doe
 
-    col1, col2 = st.columns([2, 1])
+    tab1, tab2 = st.tabs(["📂 Upload Existing Data", "🧬 Generate New DOE Matrix"])
 
-    with col1:
+    with tab1:
+        col1, col2 = st.columns([2, 1])
+
+        with col1:
+            st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+
+            uploaded_file = st.file_uploader(
+                "Drop your data file here",
+                type=["csv", "xlsx", "xls", "txt"],
+                help="Supported: CSV, Excel, Design-Expert export, Minitab export, JMP export"
+            )
+
+            use_sample = st.checkbox("📂 Use sample dataset (Citric Acid Adsorption)", help="Loads a pre-configured biological dataset for testing.")
+
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        with col2:
+            st.markdown("""
+            <div class="glass-card">
+                <div class="feature-title">Supported Formats</div>
+                <div class="feature-desc" style="margin-top: 8px;">
+                    ✅ Generic CSV / Excel<br/>
+                    ✅ Design-Expert exports<br/>
+                    ✅ Minitab worksheets<br/>
+                    ✅ JMP exports<br/>
+                </div>
+                <div class="feature-title" style="margin-top: 16px;">Auto-Detection</div>
+                <div class="feature-desc" style="margin-top: 8px;">
+                    OptiLab automatically detects your file format and extracts factors, responses, and design type.
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # Load data
+        data_source = None
+        if use_sample:
+            import os
+            sample_path = os.path.join(os.path.dirname(__file__), "data", "sample_citric_acid.csv")
+            if os.path.exists(sample_path):
+                data_source = sample_path
+            else:
+                st.warning("Sample dataset not found. Please upload your own data.")
+
+        if uploaded_file is not None:
+            data_source = uploaded_file
+
+        if data_source is not None:
+            try:
+                # Try smart import first (for RSM software exports)
+                result = smart_import(data_source)
+
+                if result["format"] != "generic":
+                    st.success(f"🎯 Auto-detected format: **{result['format'].replace('_', ' ').title()}**")
+                    st.session_state.source_format = result["format"]
+                    st.session_state.parsed_metadata = result.get("metadata", {})
+
+                    # Show parsed metadata
+                    if result.get("metadata"):
+                        with st.expander("📋 Parsed Metadata", expanded=True):
+                            meta = result["metadata"]
+                            if "design_type" in meta:
+                                st.info(f"Design Type: **{meta['design_type']}**")
+                            if "factors" in meta:
+                                st.markdown("**Factors:**")
+                                for f in meta["factors"]:
+                                    st.markdown(f"- {f['name']} ({f.get('low', '?')} → {f.get('high', '?')})")
+                            if "responses" in meta:
+                                st.markdown("**Responses:**")
+                                for r in meta["responses"]:
+                                    st.markdown(f"- {r['name']}")
+
+                df = result["data"]
+                st.session_state.raw_data = df
+                st.session_state.source_format = result["format"]
+
+            except Exception:
+                # Fallback to generic loader
+                df = load_file(data_source)
+                st.session_state.raw_data = df
+                st.session_state.source_format = "generic"
+
+    with tab2:
         st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-
-        uploaded_file = st.file_uploader(
-            "Drop your data file here",
-            type=["csv", "xlsx", "xls", "txt"],
-            help="Supported: CSV, Excel, Design-Expert export, Minitab export, JMP export"
-        )
-
-        use_sample = st.checkbox("📂 Use sample dataset (Citric Acid Adsorption)", help="Loads a pre-configured biological dataset for testing.")
-
+        col1, col2 = st.columns(2)
+        with col1:
+            design_type = st.selectbox("Design Type", ["Box-Behnken (BBD)", "Central Composite (CCD)"])
+        with col2:
+            n_factors = st.number_input("Number of Factors", min_value=2, max_value=10, value=3)
+            n_responses = st.number_input("Number of Responses", min_value=1, max_value=5, value=1)
+            
+        st.markdown("---")
+        st.markdown("**Define Factors:**")
+        factors = []
+        for i in range(int(n_factors)):
+            f_col1, f_col2, f_col3 = st.columns([2, 1, 1])
+            with f_col1:
+                f_name = st.text_input(f"Factor {i+1} Name", value=f"Factor_{i+1}", key=f"f_name_{i}")
+            with f_col2:
+                f_min = st.number_input(f"Min", value=-1.0, key=f"f_min_{i}")
+            with f_col3:
+                f_max = st.number_input(f"Max", value=1.0, key=f"f_max_{i}")
+            factors.append({"name": f_name, "min": f_min, "max": f_max})
+            
+        st.markdown("**Define Responses:**")
+        resp_names = []
+        r_cols = st.columns(min(3, int(n_responses)))
+        for i in range(int(n_responses)):
+            with r_cols[i % 3]:
+                r_name = st.text_input(f"Response {i+1} Name", value=f"Response_{i+1}", key=f"r_name_{i}")
+                resp_names.append(r_name)
+                
+        if st.button("🧬 Generate DOE Matrix", type="primary"):
+            import numpy as np
+            dtype = "BBD" if "Box-Behnken" in design_type else "CCD"
+            try:
+                doe_df = generate_doe(factors, design_type=dtype)
+                # Add empty response columns
+                for r_name in resp_names:
+                    doe_df[r_name] = np.nan
+                st.session_state.raw_data = doe_df
+                st.session_state.source_format = "generated"
+                st.session_state.parsed_metadata = {
+                    "factors": [{"name": f["name"], "low": f["min"], "high": f["max"]} for f in factors],
+                    "responses": [{"name": r} for r in resp_names],
+                    "design_type": dtype
+                }
+                st.success("DOE Matrix generated successfully! You can now fill out the response columns in the table below.")
+            except Exception as e:
+                st.error(f"Error generating DOE: {str(e)}")
+        
         st.markdown('</div>', unsafe_allow_html=True)
 
-    with col2:
-        st.markdown("""
-        <div class="glass-card">
-            <div class="feature-title">Supported Formats</div>
-            <div class="feature-desc" style="margin-top: 8px;">
-                ✅ Generic CSV / Excel<br/>
-                ✅ Design-Expert exports<br/>
-                ✅ Minitab worksheets<br/>
-                ✅ JMP exports<br/>
-            </div>
-            <div class="feature-title" style="margin-top: 16px;">Auto-Detection</div>
-            <div class="feature-desc" style="margin-top: 8px;">
-                OptiLab automatically detects your file format and extracts factors, responses, and design type.
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # Load data
-    data_source = None
-    if use_sample:
-        sample_path = os.path.join(os.path.dirname(__file__), "data", "sample_citric_acid.csv")
-        if os.path.exists(sample_path):
-            data_source = sample_path
-        else:
-            st.warning("Sample dataset not found. Please upload your own data.")
-
-    if uploaded_file is not None:
-        data_source = uploaded_file
-
-    if data_source is not None:
-        try:
-            # Try smart import first (for RSM software exports)
-            result = smart_import(data_source)
-
-            if result["format"] != "generic":
-                st.success(f"🎯 Auto-detected format: **{result['format'].replace('_', ' ').title()}**")
-                st.session_state.source_format = result["format"]
-                st.session_state.parsed_metadata = result.get("metadata", {})
-
-                # Show parsed metadata
-                if result.get("metadata"):
-                    with st.expander("📋 Parsed Metadata", expanded=True):
-                        meta = result["metadata"]
-                        if "design_type" in meta:
-                            st.info(f"Design Type: **{meta['design_type']}**")
-                        if "factors" in meta:
-                            st.markdown("**Factors:**")
-                            for f in meta["factors"]:
-                                st.markdown(f"- {f['name']} ({f.get('low', '?')} → {f.get('high', '?')})")
-                        if "responses" in meta:
-                            st.markdown("**Responses:**")
-                            for r in meta["responses"]:
-                                st.markdown(f"- {r['name']}")
-
-            df = result["data"]
-            st.session_state.raw_data = df
-            st.session_state.source_format = result["format"]
-
-        except Exception:
-            # Fallback to generic loader
-            df = load_file(data_source)
-            st.session_state.raw_data = df
-            st.session_state.source_format = "generic"
+    if st.session_state.raw_data is not None:
 
         # Data preview
         st.markdown("---")
@@ -510,6 +827,15 @@ def page_upload():
                 pass
                 
         st.session_state.raw_data = edited_df
+
+        # Provide a way to download the template/edited data
+        csv = edited_df.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="⬇️ Download Data as CSV",
+            data=csv,
+            file_name="OptiLab_Data.csv",
+            mime="text/csv",
+        )
 
         # Statistics
         stats = compute_statistics(st.session_state.raw_data)
@@ -637,15 +963,37 @@ def page_preprocessing():
     # Run preprocessing
     st.markdown("---")
     if st.button("⚙️  Run Preprocessing", use_container_width=True, type="primary"):
-        with st.spinner("Preprocessing data..."):
-            config = {
-                "missing_strategy": missing_strategy,
-                "normalization": norm_method,
-            }
-            result = preprocess_pipeline(df, factor_cols, response_cols, config)
-            st.session_state.preprocessed = result
+        import time
+        progress_container = st.empty()
 
-        st.success(f"✅ Preprocessing complete — {result['X'].shape[0]} samples, {result['X'].shape[1]} features")
+        # Step 1: Missing values
+        progress_container.markdown('''<ul class="progress-checklist">
+            <li class="active"><span class="mini-spinner"></span> Handling missing values...</li>
+        </ul>''', unsafe_allow_html=True)
+
+        config = {
+            "missing_strategy": missing_strategy,
+            "normalization": norm_method,
+        }
+        result = preprocess_pipeline(df, factor_cols, response_cols, config)
+
+        # Step 2: Normalization done
+        missing_count_resolved = df[factor_cols + response_cols].isnull().sum().sum()
+        progress_container.markdown(f'''<ul class="progress-checklist">
+            <li class="done">✅ Missing values handled ({missing_count_resolved} found)</li>
+            <li class="active"><span class="mini-spinner"></span> Normalizing features ({norm_method})...</li>
+        </ul>''', unsafe_allow_html=True)
+        time.sleep(0.3)
+
+        # Step 3: All done
+        progress_container.markdown(f'''<ul class="progress-checklist">
+            <li class="done">✅ Missing values handled ({missing_count_resolved} found)</li>
+            <li class="done">✅ Features normalized ({norm_method.title()}Scaler)</li>
+            <li class="done">✅ Dataset validated — {result['X'].shape[0]} samples, {result['X'].shape[1]} features</li>
+        </ul>''', unsafe_allow_html=True)
+
+        st.session_state.preprocessed = result
+        st.toast("Preprocessing complete!", icon="✅")
 
         # Show preview
         col1, col2 = st.columns(2)
@@ -663,7 +1011,9 @@ def page_preprocessing():
 
     elif st.session_state.preprocessed is not None:
         result = st.session_state.preprocessed
-        st.success(f"✅ Data already preprocessed — {result['X'].shape[0]} samples, {result['X'].shape[1]} features")
+        st.markdown(f'''<ul class="progress-checklist">
+            <li class="done">✅ Data already preprocessed — {result['X'].shape[0]} samples, {result['X'].shape[1]} features</li>
+        </ul>''', unsafe_allow_html=True)
 
         st.button("➡️  Proceed to Model Training", use_container_width=True, type="primary", on_click=change_phase, args=("3️⃣ Model Training",))
 
@@ -717,29 +1067,40 @@ def page_train():
             
         models = {name: models_dict[name] for name in selected_models}
         progress_bar = st.progress(0, text="Initializing...")
+        status_text = st.empty()
         all_results = {}
         tuning_results = {}
 
         for i, (name, model) in enumerate(models.items()):
-            progress_text = f"Training {name}... ({i+1}/{len(models)})"
-            progress_bar.progress((i) / len(models), text=progress_text)
+            progress_frac = i / len(models)
+            progress_bar.progress(progress_frac, text=f"Training {name}... ({i+1}/{len(models)})")
 
             try:
                 if enable_tuning:
-                    # Tune hyperparameters first
+                    status_text.markdown(f'''<ul class="progress-checklist">
+                        <li class="active"><span class="mini-spinner"></span> Tuning <strong>{name}</strong> kernel &bull; {n_trials} trials &bull; {cv_folds}-fold CV...</li>
+                    </ul>''', unsafe_allow_html=True)
+
                     tune_result = tune_all_models(
                         {name: model}, X, y,
                         n_trials=n_trials, cv_folds=cv_folds, timeout=timeout
                     )
                     if name in tune_result:
                         tuning_results[name] = tune_result[name]
+                        best_cv = tune_result[name].get("best_cv_score", 0)
+                        status_text.markdown(f'''<ul class="progress-checklist">
+                            <li class="done">✅ Tuning complete &bull; Best CV R²: <strong>{best_cv:.4f}</strong></li>
+                            <li class="active"><span class="mini-spinner"></span> Training final model with best params...</li>
+                        </ul>''', unsafe_allow_html=True)
                         model.train(X, y, params=tune_result[name].get("best_params"))
                     else:
                         model.train(X, y)
                 else:
+                    status_text.markdown(f'''<ul class="progress-checklist">
+                        <li class="active"><span class="mini-spinner"></span> Training <strong>{name}</strong> (no tuning)...</li>
+                    </ul>''', unsafe_allow_html=True)
                     model.train(X, y)
 
-                # Evaluate
                 metrics = evaluate_model(model, X, y, cv_folds=cv_folds)
                 all_results[name] = metrics
                 st.session_state.trained_models[name] = model
@@ -748,7 +1109,7 @@ def page_train():
                 st.warning(f"⚠️ {name} failed: {str(e)}")
                 all_results[name] = {"error": str(e)}
 
-        progress_bar.progress(1.0, text="✅ All models trained!")
+        progress_bar.progress(1.0, text="✅ Training complete!")
 
         st.session_state.evaluation_results = all_results
         st.session_state.tuning_results = tuning_results
@@ -757,6 +1118,21 @@ def page_train():
         best_name, best_model = auto_select_best(all_results, st.session_state.trained_models)
         st.session_state.best_model_name = best_name
         st.session_state.best_model = best_model
+
+        # Success banner with big R² score
+        best_r2 = all_results.get(best_name, {}).get("R²", all_results.get(best_name, {}).get("CV_R²_mean", 0))
+        if isinstance(best_r2, (int, float)):
+            status_text.markdown(f'''
+            <div class="success-banner">
+                <div style="font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">Gaussian Process R²</div>
+                <div class="big-score">{best_r2:.4f}</div>
+                <div style="font-size: 0.8rem; color: #6ee7a0; margin-top: 4px;">Model trained successfully</div>
+            </div>
+            ''', unsafe_allow_html=True)
+        else:
+            status_text.empty()
+
+        st.toast("Model training complete!", icon="🏆")
 
     # Display results
     if st.session_state.evaluation_results:
@@ -773,7 +1149,7 @@ def page_train():
             
             if st.button("Save RSM Baseline"):
                 st.session_state.rsm_baseline = {"R²": rsm_r2, "RMSE": rsm_rmse}
-                st.success("RSM Baseline saved! It is now included in the ranking table below.")
+                st.toast("RSM Baseline saved!", icon="📊")
 
         # Ranking table
         ranking_df = rank_models(st.session_state.evaluation_results)
@@ -903,7 +1279,7 @@ def page_optimize():
         rsm_r2 = st.number_input("R-Squared (R²) at this Optimum", value=0.0, format="%.4f", step=0.01)
         if st.button("Save RSM Optimum"):
             st.session_state.rsm_optimum["_rsm_r2"] = rsm_r2
-            st.success("RSM Optimum saved!")
+            st.toast("RSM Optimum saved!", icon="✅")
 
     st.markdown("---")
     st.markdown('<h3 class="gradient-text-blue">🔍 Search Space Bounds</h3>', unsafe_allow_html=True)
@@ -955,45 +1331,67 @@ def page_optimize():
     st.markdown("---")
 
     if st.button("🎯  Run Bayesian Optimization", use_container_width=True, type="primary"):
-        with st.spinner("Running Optimization..."):
-            bounds = user_bounds
+        import time
+        bounds = user_bounds
+        opt_status = st.empty()
 
-            if opt_type == "Single Objective":
-                # Determine which column index corresponds to the selected target
-                target_idx = response_cols.index(target_col)
-                if y.ndim > 1 and y.shape[1] > 1:
-                    y_target = y[:, target_idx]
-                else:
-                    y_target = y.ravel()
-                
-                y_best = y_target.max() if optimize_direction == "Maximize" else y_target.min()
-                
-                recommendations = recommend_experiments(
-                    model=SingleObjectiveProxy(model, target_idx),
-                    bounds=bounds,
-                    feature_names=feature_names,
-                    y_best=y_best,
-                    acq_func=acq_map[acq_func],
-                    n_recommend=n_recommend,
-                    n_candidates=n_candidates,
-                    minimize=(optimize_direction == "Minimize"),
-                )
+        # Step 1: Generate candidates
+        opt_status.markdown(f'''<ul class="progress-checklist">
+            <li class="active"><span class="mini-spinner"></span> Generating {n_candidates:,} candidate points across search space...</li>
+        </ul>''', unsafe_allow_html=True)
+
+        if opt_type == "Single Objective":
+            target_idx = response_cols.index(target_col)
+            if y.ndim > 1 and y.shape[1] > 1:
+                y_target = y[:, target_idx]
             else:
-                from modules.optimization.multi_objective import multi_objective_recommend
-                # For multi-objective, we simulate using the same model for all objectives if we only trained one,
-                # but to be robust, we pass a list of models (here just duplicates of best_model for simplicity)
-                models = [SingleObjectiveProxy(model, i) for i in range(len(response_cols))]
-                
-                recommendations = multi_objective_recommend(
-                    models=models,
-                    bounds=bounds,
-                    feature_names=feature_names,
-                    objectives_config=objectives_config,
-                    n_recommend=n_recommend,
-                    n_candidates=n_candidates
-                )
+                y_target = y.ravel()
+            
+            y_best = y_target.max() if optimize_direction == "Maximize" else y_target.min()
 
-            st.session_state.bo_recommendations = recommendations
+            # Step 2: Acquisition function
+            opt_status.markdown(f'''<ul class="progress-checklist">
+                <li class="done">✅ Generated {n_candidates:,} candidate points</li>
+                <li class="active"><span class="mini-spinner"></span> Evaluating {acq_func} acquisition function...</li>
+            </ul>''', unsafe_allow_html=True)
+            
+            recommendations = recommend_experiments(
+                model=SingleObjectiveProxy(model, target_idx),
+                bounds=bounds,
+                feature_names=feature_names,
+                y_best=y_best,
+                acq_func=acq_map[acq_func],
+                n_recommend=n_recommend,
+                n_candidates=n_candidates,
+                minimize=(optimize_direction == "Minimize"),
+            )
+        else:
+            from modules.optimization.multi_objective import multi_objective_recommend
+            models = [SingleObjectiveProxy(model, i) for i in range(len(response_cols))]
+
+            opt_status.markdown(f'''<ul class="progress-checklist">
+                <li class="done">✅ Generated {n_candidates:,} candidate points</li>
+                <li class="active"><span class="mini-spinner"></span> Running multi-objective Pareto optimization...</li>
+            </ul>''', unsafe_allow_html=True)
+            
+            recommendations = multi_objective_recommend(
+                models=models,
+                bounds=bounds,
+                feature_names=feature_names,
+                objectives_config=objectives_config,
+                n_recommend=n_recommend,
+                n_candidates=n_candidates
+            )
+
+        # Step 3: Done
+        opt_status.markdown(f'''<ul class="progress-checklist">
+            <li class="done">✅ Generated {n_candidates:,} candidate points</li>
+            <li class="done">✅ Acquisition function evaluated</li>
+            <li class="done">✅ Top {n_recommend} experiments selected</li>
+        </ul>''', unsafe_allow_html=True)
+
+        st.session_state.bo_recommendations = recommendations
+        st.toast("Optimization complete!", icon="🎯")
 
     if st.session_state.bo_recommendations is not None:
         st.markdown("---")
@@ -1158,47 +1556,67 @@ def page_report():
     from modules.reporting.report_generator import generate_report
 
     st.markdown("""
-    Generate a publication-ready PDF report containing your full optimization workflow:
-    dataset summary, model benchmarking, optimization results, and recommended conditions.
+    Generate a publication-ready PDF report containing your full optimization workflow.
     """)
 
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
 
-    # Report preview sections
     st.markdown("**Report will include:**")
     sections = [
-        "✅ Dataset Summary (factors, responses, sample size)",
-        "✅ Preprocessing Configuration",
-        "✅ Gaussian Process Evaluation Metrics",
-        "✅ Best Model Details & Tuned Hyperparameters",
-        
-        "✅ Optimization Results & Recommended Conditions",
-        "✅ Convergence History",
-        "✅ All Plots (3D Surface, Contour, Predicted vs Actual)",
+        "Methodology (GP + Bayesian Optimization)",
+        "Dataset Summary (factors, responses, sample size)",
+        "Gaussian Process Evaluation Metrics",
+        "Tuned Hyperparameters (Optuna)",
+        "Optimization Results & Recommended Conditions",
+        "Convergence History",
     ]
     for s in sections:
-        st.markdown(s)
+        st.markdown(f"- {s}")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
     if st.button("📄  Generate PDF Report", use_container_width=True, type="primary"):
-        with st.spinner("Generating report..."):
-            report_data = {
-                "raw_data": st.session_state.raw_data,
-                "factor_cols": st.session_state.factor_cols,
-                "response_cols": st.session_state.response_cols,
-                "preprocessed": st.session_state.preprocessed,
-                "evaluation_results": st.session_state.evaluation_results,
-                "best_model_name": st.session_state.best_model_name,
-                "tuning_results": st.session_state.tuning_results,
-                "bo_recommendations": st.session_state.bo_recommendations,
-                "bo_history": st.session_state.bo_history,
-                "iteration_count": st.session_state.iteration_count,
-            }
+        import time
+        report_status = st.empty()
 
-            pdf_bytes = generate_report(report_data)
+        report_status.markdown('''<ul class="progress-checklist">
+            <li class="active"><span class="mini-spinner"></span> Building methodology section...</li>
+        </ul>''', unsafe_allow_html=True)
 
-        st.success("✅ Report generated!")
+        report_data = {
+            "raw_data": st.session_state.raw_data,
+            "factor_cols": st.session_state.factor_cols,
+            "response_cols": st.session_state.response_cols,
+            "preprocessed": st.session_state.preprocessed,
+            "evaluation_results": st.session_state.evaluation_results,
+            "best_model_name": st.session_state.best_model_name,
+            "tuning_results": st.session_state.tuning_results,
+            "bo_recommendations": st.session_state.bo_recommendations,
+            "bo_history": st.session_state.bo_history,
+            "iteration_count": st.session_state.iteration_count,
+        }
+
+        report_status.markdown('''<ul class="progress-checklist">
+            <li class="done">✅ Methodology section</li>
+            <li class="active"><span class="mini-spinner"></span> Building dataset summary...</li>
+        </ul>''', unsafe_allow_html=True)
+        time.sleep(0.2)
+
+        report_status.markdown('''<ul class="progress-checklist">
+            <li class="done">✅ Methodology section</li>
+            <li class="done">✅ Dataset summary</li>
+            <li class="active"><span class="mini-spinner"></span> Compiling PDF...</li>
+        </ul>''', unsafe_allow_html=True)
+
+        pdf_bytes = generate_report(report_data)
+
+        report_status.markdown('''<ul class="progress-checklist">
+            <li class="done">✅ Methodology section</li>
+            <li class="done">✅ Dataset summary</li>
+            <li class="done">✅ PDF compiled successfully</li>
+        </ul>''', unsafe_allow_html=True)
+
+        st.toast("Report generated!", icon="📄")
         st.download_button(
             label="⬇️  Download PDF Report",
             data=pdf_bytes,
@@ -1267,7 +1685,7 @@ def page_history():
 # ──────────────────────────────────────────────
 PHASE_FUNCTIONS = {
     "🏠 Home": page_home,
-    "1️⃣ Data Upload": page_upload,
+    "1️⃣ Data Input & DOE": page_upload,
     "2️⃣ Preprocessing": page_preprocessing,
     "3️⃣ Model Training": page_train,
     "4️⃣ Bayesian Optimization": page_optimize,
@@ -1282,8 +1700,10 @@ page_fn()
 # Footer
 st.markdown("---")
 st.markdown('''
-<div style="text-align: center; color: #4a5568; font-size: 0.8rem; padding: 12px;">
-    🧬 OptiLab v1.0 — AI-Assisted Experimental Optimization Platform<br/>
-    Built with Streamlit • scikit-learn • Optuna • Plotly
+<div class="optilab-footer">
+    🧬 OptiLab <span class="version-badge">v2.0</span><br/>
+    <span style="color: #1e293b;">—</span> AI-Assisted Experimental Optimization <span style="color: #1e293b;">—</span><br/>
+    <span style="font-size: 0.7rem; color: #1e293b; margin-top: 4px; display: inline-block;">Streamlit &bull; Gaussian Process &bull; Bayesian Optimization &bull; Optuna</span>
 </div>
 ''', unsafe_allow_html=True)
+
