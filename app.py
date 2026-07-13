@@ -1258,6 +1258,14 @@ def page_optimize():
         n_candidates = st.number_input("Candidate pool size", min_value=1000, max_value=100000, value=20000, step=1000, help="The number of simulated factor combinations the AI will test behind the scenes to find the absolute peak.")
     st.markdown('</div>', unsafe_allow_html=True)
 
+    if acq_func == "Expected Improvement (EI)":
+        st.info("**Expected Improvement (EI):** This is the industry standard. It perfectly balances *exploitation* (searching where the AI already knows the yield is high) and *exploration* (searching where the AI is highly uncertain, because a massive hidden peak might be there). Use this for almost all general optimization tasks.")
+    elif acq_func == "Upper Confidence Bound (UCB)":
+        st.info("**Upper Confidence Bound (UCB):** This is an optimistic function. It prioritizes *exploration* slightly more by looking at the absolute maximum possible yield the AI thinks *could* exist in an uncertain area. Use this if you want to be aggressive and discover completely new, unexpected peaks.")
+    elif acq_func == "Probability of Improvement (PI)":
+        st.info("**Probability of Improvement (PI):** This is the most conservative function. It only cares about how *likely* an experiment is to be better than your current best result, even if it's only 0.01% better. It strongly prioritizes *exploitation*. Use this if experiments are very expensive and you just want a guaranteed, safe improvement.")
+
+
     acq_map = {
         "Expected Improvement (EI)": "EI",
         "Upper Confidence Bound (UCB)": "UCB",
