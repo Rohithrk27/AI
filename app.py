@@ -1552,77 +1552,46 @@ def page_report():
         st.warning("⬅️ Please complete the optimization workflow first.")
         return
 
-    from modules.reporting.report_generator import generate_report
+    import pandas as pd
 
-    st.markdown("""
-    Generate a publication-ready PDF report containing your full optimization workflow.
-    """)
+    st.markdown("### 📊 Dataset Summary")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown(f"**Factors:** {', '.join(st.session_state.factor_cols)}")
+        st.markdown(f"**Responses:** {', '.join(st.session_state.response_cols)}")
+    with col2:
+        st.markdown(f"**Total Experiments:** {len(st.session_state.raw_data)}")
+        
+    st.dataframe(st.session_state.raw_data, use_container_width=True)
 
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    st.markdown("---")
+    st.markdown("### 🤖 Model Performance")
+    if st.session_state.best_model_name:
+        st.info(f"**Selected Model:** {st.session_state.best_model_name} (Gaussian Process)")
+    if st.session_state.evaluation_results:
+        st.dataframe(pd.DataFrame([st.session_state.evaluation_results]), use_container_width=True)
 
-    st.markdown("**Report will include:**")
-    sections = [
-        "Methodology (GP + Bayesian Optimization)",
-        "Dataset Summary (factors, responses, sample size)",
-        "Gaussian Process Evaluation Metrics",
-        "Tuned Hyperparameters (Optuna)",
-        "Optimization Results & Recommended Conditions",
-        "Convergence History",
-    ]
-    for s in sections:
-        st.markdown(f"- {s}")
+    if st.session_state.tuning_results:
+        with st.expander("⚙️ Tuned Hyperparameters (Optuna)"):
+            st.json(st.session_state.tuning_results)
 
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("---")
+    st.markdown("### 🎯 Optimization Results")
+    if st.session_state.bo_recommendations is not None:
+        st.markdown("Top recommended experiments from Bayesian Optimization:")
+        st.dataframe(st.session_state.bo_recommendations, use_container_width=True)
+    else:
+        st.info("Run Bayesian Optimization in Phase 4 to see recommended conditions here.")
 
-    if st.button("📄  Generate PDF Report", use_container_width=True, type="primary"):
-        import time
-        report_status = st.empty()
-
-        report_status.markdown('''<ul class="progress-checklist">
-            <li class="active"><span class="mini-spinner"></span> Building methodology section...</li>
-        </ul>''', unsafe_allow_html=True)
-
-        report_data = {
-            "raw_data": st.session_state.raw_data,
-            "factor_cols": st.session_state.factor_cols,
-            "response_cols": st.session_state.response_cols,
-            "preprocessed": st.session_state.preprocessed,
-            "evaluation_results": st.session_state.evaluation_results,
-            "best_model_name": st.session_state.best_model_name,
-            "tuning_results": st.session_state.tuning_results,
-            "bo_recommendations": st.session_state.bo_recommendations,
-            "bo_history": st.session_state.bo_history,
-            "iteration_count": st.session_state.iteration_count,
-        }
-
-        report_status.markdown('''<ul class="progress-checklist">
-            <li class="done">✅ Methodology section</li>
-            <li class="active"><span class="mini-spinner"></span> Building dataset summary...</li>
-        </ul>''', unsafe_allow_html=True)
-        time.sleep(0.2)
-
-        report_status.markdown('''<ul class="progress-checklist">
-            <li class="done">✅ Methodology section</li>
-            <li class="done">✅ Dataset summary</li>
-            <li class="active"><span class="mini-spinner"></span> Compiling PDF...</li>
-        </ul>''', unsafe_allow_html=True)
-
-        pdf_bytes = generate_report(report_data)
-
-        report_status.markdown('''<ul class="progress-checklist">
-            <li class="done">✅ Methodology section</li>
-            <li class="done">✅ Dataset summary</li>
-            <li class="done">✅ PDF compiled successfully</li>
-        </ul>''', unsafe_allow_html=True)
-
-        st.toast("Report generated!", icon="📄")
-        st.download_button(
-            label="⬇️  Download PDF Report",
-            data=pdf_bytes,
-            file_name="OptiLab_Optimization_Report.pdf",
-            mime="application/pdf",
-            use_container_width=True,
-        )
+    st.markdown("---")
+    st.markdown("### 📈 Convergence History")
+    if st.session_state.bo_history:
+        history_df = pd.DataFrame(st.session_state.bo_history)
+        st.line_chart(history_df.set_index("iteration")["best_value"])
+        with st.expander("View History Data"):
+            st.dataframe(history_df, use_container_width=True)
+    else:
+        st.info("Iterate in Phase 5 to track convergence over time.")
 
 
 # ──────────────────────────────────────────────
