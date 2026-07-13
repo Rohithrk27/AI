@@ -910,8 +910,6 @@ def page_upload():
             # Next step button
             st.markdown("<br/>", unsafe_allow_html=True)
             st.button("➡️ Proceed to Preprocessing", use_container_width=True, type="primary", on_click=change_phase, args=("2️⃣ Preprocessing",))
-        else:
-            st.info("👆 Please select at least one Factor column and one Response column from the dropdowns above to proceed.")
 
 
 # ──────────────────────────────────────────────
@@ -1540,16 +1538,15 @@ def page_iterate():
         # Auto-suggest new recommendations
         st.session_state.bo_recommendations = None  # Reset so optimization can be rerun
 
-        st.button("➡️ Proceed to Report & History", use_container_width=True, type="primary", on_click=change_phase, args=("6️⃣ Report & History",))
-
-
+    # Allow user to proceed to report without iterating
+    st.markdown("---")
+    st.button("➡️ Proceed to Report & History", use_container_width=True, type="primary", on_click=change_phase, args=("6️⃣ Report & History",))
 
 
 # ──────────────────────────────────────────────
 # Page: Report
 # ──────────────────────────────────────────────
 def page_report():
-    st.markdown('<h2 class="gradient-text">📄 Generate Report</h2>', unsafe_allow_html=True)
 
     if st.session_state.best_model is None:
         st.warning("⬅️ Please complete the optimization workflow first.")
@@ -1632,17 +1629,11 @@ def page_report():
 # Page: History
 # ──────────────────────────────────────────────
 def page_history():
-    st.markdown('<h2 class="gradient-text">📚 Experiment History</h2>', unsafe_allow_html=True)
+    st.markdown('<h2 class="gradient-text">📚 Report & History</h2>', unsafe_allow_html=True)
+    st.markdown("Download your publication-ready PDF report or view current session statistics below.")
 
-    from database.history import init_database, load_experiment_history
-
-    conn = init_database()
-    history = load_experiment_history(conn)
-
-    if history is not None and len(history) > 0:
-        st.dataframe(history, use_container_width=True)
-    else:
-        st.info("No experiment history yet. Complete an optimization workflow to save results.")
+    # Render the report generator here instead of a separate page
+    page_report()
 
     # Current session info
     st.markdown("---")
