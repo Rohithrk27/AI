@@ -828,6 +828,19 @@ def page_upload():
                 
         st.session_state.raw_data = edited_df
 
+        # Column Renaming UI
+        with st.expander("✏️ Rename Columns", expanded=False):
+            st.markdown("The data table above does not allow editing column headers directly. Use these inputs to rename your factors or responses.")
+            with st.form("rename_columns_form"):
+                rename_cols = st.columns(3)
+                new_names = {}
+                for i, col in enumerate(st.session_state.raw_data.columns):
+                    with rename_cols[i % 3]:
+                        new_names[col] = st.text_input(f"Rename '{col}'", value=col)
+                
+                if st.form_submit_button("Apply New Names"):
+                    st.session_state.raw_data = st.session_state.raw_data.rename(columns=new_names)
+                    st.rerun()
         # Provide a way to download the template/edited data
         csv = edited_df.to_csv(index=False).encode('utf-8')
         st.download_button(
