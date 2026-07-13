@@ -910,6 +910,8 @@ def page_upload():
             # Next step button
             st.markdown("<br/>", unsafe_allow_html=True)
             st.button("➡️ Proceed to Preprocessing", use_container_width=True, type="primary", on_click=change_phase, args=("2️⃣ Preprocessing",))
+        else:
+            st.info("👆 Please select at least one Factor column and one Response column from the dropdowns above to proceed.")
 
 
 # ──────────────────────────────────────────────
