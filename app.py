@@ -1569,35 +1569,10 @@ def page_report():
 
     import pandas as pd
 
-    st.markdown("### 📊 Dataset Summary")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown(f"**Factors:** {', '.join(st.session_state.factor_cols)}")
-        st.markdown(f"**Responses:** {', '.join(st.session_state.response_cols)}")
-    with col2:
-        st.markdown(f"**Total Experiments:** {len(st.session_state.raw_data)}")
-        
-    st.dataframe(st.session_state.raw_data, use_container_width=True)
+    st.markdown("### 🎯 The Bottom Line: What to do next")
+    st.info("**AI Recommendation:** Based on your data, the AI has calculated the exact theoretical conditions required to achieve the highest possible yield. To verify this in your lab, perform the specific experiments listed below.")
 
-    st.markdown("---")
-    st.markdown("### 🤖 Model Performance")
-    if st.session_state.best_model_name:
-        st.info(f"**Selected Model:** {st.session_state.best_model_name} (Gaussian Process)")
-    if st.session_state.evaluation_results:
-        st.dataframe(pd.DataFrame([st.session_state.evaluation_results]), use_container_width=True)
-
-    if st.session_state.tuning_results:
-        with st.expander("⚙️ Tuned Hyperparameters (Optuna)"):
-            st.json(st.session_state.tuning_results)
-
-    st.markdown("---")
-    st.markdown("### 🎯 Optimization Results")
-    
-    st.info("**What the AI did:** Using Bayesian Optimization, the AI explored the theoretical landscape of your experiment. It calculated the exact combination of factors that is mathematically most likely to give you the highest possible yield, and it recommended the top experiments you should run next in the lab to verify this.")
-    
     if st.session_state.bo_recommendations is not None:
-        st.markdown("**Top recommended experiments from Bayesian Optimization:**")
-        
         recs = st.session_state.bo_recommendations.copy()
         if "scaler" in st.session_state.preprocessed:
             feature_names = st.session_state.preprocessed["feature_names"]
@@ -1612,16 +1587,17 @@ def page_report():
         if "ai_optimum" in st.session_state:
             st.markdown("---")
             st.markdown("### ⚖️ AI vs Classical RSM Comparison")
+            st.markdown("How does the modern AI model compare against the classical Response Surface Methodology (RSM)?")
             
             comp_col1, comp_col2 = st.columns(2)
             with comp_col2:
-                st.markdown("**⭐ Absolute Optimal Theoretical Conditions (AI)**")
+                st.markdown("**⭐ AI Theoretical Optimum**")
                 st.dataframe(pd.DataFrame([st.session_state.ai_optimum]), use_container_width=True)
                 if "ai_optimum_pred" in st.session_state:
-                    st.success(f"**Predicted Target:** {st.session_state.ai_optimum_pred:.4f}")
+                    st.success(f"**AI Predicted Yield:** {st.session_state.ai_optimum_pred:.4f}")
                     
             with comp_col1:
-                st.markdown("**Classical Statistical Optimum (RSM)**")
+                st.markdown("**Classical RSM Optimum**")
                 if "rsm_optimum" in st.session_state and "_rsm_r2" in st.session_state.rsm_optimum:
                     rsm_disp = {k: v for k, v in st.session_state.rsm_optimum.items() if k != "_rsm_r2"}
                     st.dataframe(pd.DataFrame([rsm_disp]), use_container_width=True)
@@ -1632,14 +1608,31 @@ def page_report():
         st.info("Run Bayesian Optimization in Phase 4 to see recommended conditions here.")
 
     st.markdown("---")
-    st.markdown("### 📈 Convergence History")
-    if st.session_state.bo_history:
-        history_df = pd.DataFrame(st.session_state.bo_history)
-        st.line_chart(history_df.set_index("iteration")["best_value"])
-        with st.expander("View History Data"):
-            st.dataframe(history_df, use_container_width=True)
-    else:
-        st.info("Iterate in Phase 5 to track convergence over time.")
+    with st.expander("📊 View Detailed Data & Technical Metrics", expanded=False):
+        st.markdown("#### 1. Dataset Summary")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown(f"**Factors:** {', '.join(st.session_state.factor_cols)}")
+            st.markdown(f"**Responses:** {', '.join(st.session_state.response_cols)}")
+        with col2:
+            st.markdown(f"**Total Experiments:** {len(st.session_state.raw_data)}")
+        st.dataframe(st.session_state.raw_data, use_container_width=True)
+
+        st.markdown("#### 2. Model Performance")
+        if st.session_state.best_model_name:
+            st.write(f"**Selected Model:** {st.session_state.best_model_name} (Gaussian Process)")
+        if st.session_state.evaluation_results:
+            st.dataframe(pd.DataFrame([st.session_state.evaluation_results]), use_container_width=True)
+        if st.session_state.tuning_results:
+            st.write("**Optuna Hyperparameters:**")
+            st.json(st.session_state.tuning_results)
+
+        st.markdown("#### 3. Convergence History")
+        if st.session_state.bo_history:
+            history_df = pd.DataFrame(st.session_state.bo_history)
+            st.line_chart(history_df.set_index("iteration")["best_value"])
+        else:
+            st.write("Iterate in Phase 5 to track convergence over time.")
 
 
 # ──────────────────────────────────────────────
@@ -1647,7 +1640,7 @@ def page_report():
 # ──────────────────────────────────────────────
 def page_history():
     st.markdown('<h2 class="gradient-text">📚 Report & History</h2>', unsafe_allow_html=True)
-    st.markdown("Download your publication-ready PDF report or view current session statistics below.")
+    st.markdown("Review your final optimization results, AI recommendations, and session statistics below.")
 
     # Render the report generator here instead of a separate page
     page_report()
