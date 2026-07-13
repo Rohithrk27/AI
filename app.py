@@ -459,6 +459,51 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+if st.session_state.get("light_mode", False):
+    st.markdown("""
+<style>
+    .stApp { background: radial-gradient(circle at 50% 0%, #f8fafc 0%, #f1f5f9 60%, #e2e8f0 100%) !important; }
+    .stApp::before { background: none !important; }
+    html, body, [class*="css"], p, span, li, label, div { color: #1e293b !important; }
+    h1, h2, h3, h4, h5, h6 { color: #0f172a !important; }
+    
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+        border-right: 1px solid rgba(0, 0, 0, 0.08) !important;
+    }
+    section[data-testid="stSidebar"] .stRadio > label { color: #64748b !important; }
+    section[data-testid="stSidebar"] .stRadio > label:hover {
+        background: rgba(0, 0, 0, 0.04) !important;
+        color: #0f172a !important;
+    }
+    .glass-card {
+        background: rgba(255, 255, 255, 0.75) !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08) !important;
+    }
+    .hero-subtitle { color: #64748b !important; }
+    .workflow-step { background: rgba(255, 255, 255, 0.8) !important; border-left-color: #94a3b8 !important;}
+    .workflow-step:hover { background: rgba(255, 255, 255, 1) !important; }
+    .metric-card { background: rgba(255, 255, 255, 0.8) !important; border: 1px solid rgba(0, 0, 0, 0.08) !important;}
+    [data-testid="stExpander"] { background: rgba(255, 255, 255, 0.8) !important; border: 1px solid rgba(0,0,0,0.1) !important; }
+    [data-testid="stExpander"] > details > summary { background: rgba(0, 0, 0, 0.02) !important; }
+    .stepper-label { color: #64748b !important; }
+    .stepper-dot.locked { background: #cbd5e1 !important; border: 1px solid #94a3b8 !important; }
+    .stepper-line { background: #cbd5e1 !important; }
+    .progress-checklist li { color: #475569 !important; }
+    .optilab-footer { color: #64748b !important; }
+    
+    [data-testid="baseButton-secondary"] {
+        border: 1px solid rgba(0, 0, 0, 0.15) !important;
+        color: #334155 !important;
+    }
+    [data-testid="baseButton-secondary"]:hover {
+        background: rgba(0, 0, 0, 0.04) !important;
+        color: #0f172a !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 
 # ──────────────────────────────────────────────
 # Session State Initialization
@@ -468,6 +513,7 @@ def init_session_state():
     defaults = {
         # Navigation
         "current_page": "🏠 Home",
+        "light_mode": False,
         # Data
         "raw_data": None,
         "parsed_data": None,        # Output from rsm_parsers or loader
@@ -569,6 +615,11 @@ with st.sidebar:
 
     stepper_html += '</div>'
     st.markdown(stepper_html, unsafe_allow_html=True)
+
+    st.markdown("---")
+    
+    light_mode = st.toggle("☀️ Light Mode", value=st.session_state.get('light_mode', False))
+    st.session_state.light_mode = light_mode
 
     st.markdown("---")
 
