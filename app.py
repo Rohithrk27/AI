@@ -1696,6 +1696,98 @@ def page_report():
         st.info("You need at least 2 factors to generate a 3D surface plot.")
 
     st.markdown("---")
+    st.markdown("### 📉 AI Marginal Effects (Optimization Plot)")
+    st.markdown("This plot shows how each individual factor affects the yield when all other factors are held constant at their optimal values. It replicates the classic 'Optimization Plot' from Minitab/Design-Expert.")
+    
+    if st.button("Generate Marginal Effects Plot", key="btn_marginal"):
+        with st.spinner("Calculating Marginal Effects..."):
+            try:
+                import plotly.subplots as sp
+                import plotly.graph_objects as go
+                import numpy as np
+                
+                feature_names = st.session_state.preprocessed["feature_names"]
+                X_orig_df = pd.DataFrame(st.session_state.preprocessed["X_original"], columns=feature_names)
+                
+                fig = sp.make_subplots(rows=1, cols=len(feature_names), subplot_titles=feature_names)
+                
+                base_dict = st.session_state.ai_optimum.copy()
+                
+                for i, fname in enumerate(feature_names):
+                    f_min = X_orig_df[fname].min()
+                    f_max = X_orig_df[fname].max()
+                    f_grid = np.linspace(f_min, f_max, 50)
+                    
+                    grid_df = pd.DataFrame([base_dict] * 50)
+                    grid_df[fname] = f_grid
+                    grid_df = grid_df[feature_names]
+                    
+                    if "scaler" in st.session_state.preprocessed:
+                        scaler = st.session_state.preprocessed["scaler"]
+                        X_pred = scaler.transform(grid_df)
+                    else:
+                        X_pred = grid_df.values
+                        
+                    model = st.session_state.best_model
+                    target_col = st.session_state.response_cols[0]
+                    
+                    if hasattr(model, "predict_with_uncertainty"):
+                        preds, _ = model.predict_with_uncertainty(X_pred)
+                    else:
+                        preds = model.predict(X_pred)
+                        
+                    if isinstance(preds, np.ndarray) and preds.ndim > 1 and preds.shape[1] > 1:
+                        preds = preds[:, 0]
+                        
+                    fig.add_trace(
+                        go.Scatter(x=f_grid, y=preds, mode='lines', name=fname, showlegend=False),
+                        row=1, col=i+1
+                    )
+                    
+                    # Add vertical line for the optimum value
+                    opt_val = base_dict[fname]
+                    fig.add_vline(x=opt_val, line_width=1, line_dash="dash", line_color="red", row=1, col=i+1)
+                    
+                fig.update_layout(height=400, title_text=f"Marginal Effects on {target_col} (Red line = AI Optimum)")
+                fig.update_yaxes(matches='y') # Link Y axes so scales match exactly like classical plots
+                st.plotly_chart(fig, use_container_width=True)
+            except Exception as e:
+                st.error(f"Error generating plot: {str(e)}")
+
+    st.markdown("---")
+    st.markdown("### 📊 Relative Factor Importance (ANOVA Alternative)")
+    st.markdown("Because Gaussian Processes use complex non-linear mathematics instead of rigid polynomial equations, they don't produce a standard ANOVA table. However, we can use a robust tree-based algorithm (Random Forest) on your data to determine the exact relative importance of each factor, providing the exact same insight.")
+    
+    if st.button("Calculate Feature Importance", key="btn_importance"):
+        with st.spinner("Calculating Importance..."):
+            try:
+                from sklearn.ensemble import RandomForestRegressor
+                import plotly.express as px
+                
+                X_train = st.session_state.preprocessed["X"]
+                y_train = st.session_state.preprocessed["y"]
+                if y_train.ndim > 1:
+                    y_train = y_train[:, 0]
+                    
+                rf = RandomForestRegressor(n_estimators=100, random_state=42)
+                rf.fit(X_train, y_train)
+                
+                importances = rf.feature_importances_
+                feature_names = st.session_state.preprocessed["feature_names"]
+                
+                imp_df = pd.DataFrame({
+                    "Factor": feature_names,
+                    "Importance (%)": importances * 100
+                }).sort_values(by="Importance (%)", ascending=False)
+                
+                fig = px.bar(imp_df, x="Importance (%)", y="Factor", orientation='h', 
+                             title="Relative Factor Importance", text_auto='.2f')
+                fig.update_layout(yaxis={'categoryorder':'total ascending'})
+                st.plotly_chart(fig, use_container_width=True)
+            except Exception as e:
+                st.error(f"Error calculating importance: {str(e)}")
+
+    st.markdown("---")
     with st.expander("📊 View Detailed Data & Technical Metrics", expanded=False):
         st.markdown("#### 1. Dataset Summary")
         col1, col2 = st.columns(2)
