@@ -1622,10 +1622,19 @@ def page_report():
                 
                 feature_names = st.session_state.preprocessed["feature_names"]
                 X_orig_df = pd.DataFrame(st.session_state.preprocessed["X_original"], columns=feature_names)
-                
-                fig = sp.make_subplots(rows=1, cols=len(feature_names), subplot_titles=feature_names)
-                
                 base_dict = st.session_state.ai_optimum.copy()
+                
+                # Generate detailed titles for each subplot
+                titles = []
+                for fname in feature_names:
+                    f_min = X_orig_df[fname].min()
+                    f_max = X_orig_df[fname].max()
+                    opt_val = base_dict[fname]
+                    # Format exactly like classical software: High, Cur (Red), Low
+                    title = f"<b>{fname}</b><br><span style='font-size:11px'>High: {f_max:.4g}</span><br><span style='color:red'>Cur: [{opt_val:.4g}]</span><br><span style='font-size:11px'>Low: {f_min:.4g}</span>"
+                    titles.append(title)
+                
+                fig = sp.make_subplots(rows=1, cols=len(feature_names), subplot_titles=titles)
                 
                 for i, fname in enumerate(feature_names):
                     f_min = X_orig_df[fname].min()
@@ -1654,15 +1663,21 @@ def page_report():
                         preds = preds[:, 0]
                         
                     fig.add_trace(
-                        go.Scatter(x=f_grid, y=preds, mode='lines', name=fname, showlegend=False),
+                        go.Scatter(x=f_grid, y=preds, mode='lines', name=fname, showlegend=False, line=dict(color='blue')),
                         row=1, col=i+1
                     )
                     
                     # Add vertical line for the optimum value
                     opt_val = base_dict[fname]
-                    fig.add_vline(x=opt_val, line_width=1, line_dash="dash", line_color="red", row=1, col=i+1)
+                    fig.add_vline(x=opt_val, line_width=1, line_color="red", row=1, col=i+1)
                     
-                fig.update_layout(height=400, title_text=f"Marginal Effects on {target_col} (Red line = AI Optimum)")
+                fig.update_layout(height=450, title_text=f"Optimization Plot (Marginal Effects on {target_col})", margin=dict(t=120))
+                
+                # Add target info to the far left Y-axis
+                if "ai_optimum_pred" in st.session_state:
+                    pred_y = st.session_state.ai_optimum_pred
+                    fig.update_yaxes(title_text=f"<b>{target_col}</b><br><span style='color:blue'>y = {pred_y:.4f}</span>", row=1, col=1)
+                    
                 fig.update_yaxes(matches='y') # Link Y axes so scales match exactly like classical plots
                 st.plotly_chart(fig, use_container_width=True)
             except Exception as e:
