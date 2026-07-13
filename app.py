@@ -1622,8 +1622,10 @@ def page_report():
             y_opts = [f for f in st.session_state.factor_cols if f != x_axis]
             y_axis = st.selectbox("Y-axis Factor", y_opts, index=0)
             
-        if st.button("Generate 3D Plot", type="primary"):
-            with st.spinner("Rendering AI Surface..."):
+        plot_type = st.radio("Plot Type", ["3D Surface", "2D Contour"], horizontal=True)
+            
+        if st.button("Generate Plot", type="primary"):
+            with st.spinner(f"Rendering AI {plot_type}..."):
                 try:
                     feature_names = st.session_state.preprocessed["feature_names"]
                     X_orig_df = pd.DataFrame(st.session_state.preprocessed["X_original"], columns=feature_names)
@@ -1668,16 +1670,25 @@ def page_report():
                     Z_mesh = preds.reshape(40, 40)
                     
                     # Plotly
-                    fig = go.Figure(data=[go.Surface(z=Z_mesh, x=x_grid, y=y_grid, colorscale='Viridis')])
-                    fig.update_layout(
-                        title=f"AI Response Surface (Z = {target_col})",
-                        scene=dict(
+                    if plot_type == "3D Surface":
+                        fig = go.Figure(data=[go.Surface(z=Z_mesh, x=x_grid, y=y_grid, colorscale='Viridis')])
+                        fig.update_layout(
+                            title=f"AI Response Surface (Z = {target_col})",
+                            scene=dict(
+                                xaxis_title=x_axis,
+                                yaxis_title=y_axis,
+                                zaxis_title=target_col
+                            ),
+                            margin=dict(l=0, r=0, b=0, t=40)
+                        )
+                    else:
+                        fig = go.Figure(data=[go.Contour(z=Z_mesh, x=x_grid, y=y_grid, colorscale='Viridis', contours=dict(showlabels=True))])
+                        fig.update_layout(
+                            title=f"AI 2D Contour Map (Z = {target_col})",
                             xaxis_title=x_axis,
                             yaxis_title=y_axis,
-                            zaxis_title=target_col
-                        ),
-                        margin=dict(l=0, r=0, b=0, t=40)
-                    )
+                            margin=dict(l=40, r=40, b=40, t=40)
+                        )
                     st.plotly_chart(fig, use_container_width=True)
                 except Exception as e:
                     st.error(f"Could not generate plot: {str(e)}")
