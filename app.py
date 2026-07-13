@@ -1281,10 +1281,14 @@ def page_optimize():
         rsm_cols = st.columns(min(4, len(feature_names)))
         for i, fname in enumerate(feature_names):
             with rsm_cols[i % len(rsm_cols)]:
-                val = st.number_input(f"{fname}", value=0.0, format="%.4f", step=0.01, key=f"rsm_opt_{fname}")
+                # Use saved value if it exists, otherwise 0.0
+                default_val = float(st.session_state.rsm_optimum.get(fname, 0.0))
+                val = st.number_input(f"{fname}", value=default_val, format="%.4f", step=0.01, key=f"rsm_opt_{fname}")
                 st.session_state.rsm_optimum[fname] = float(val)
                 
-        rsm_r2 = st.number_input("R-Squared (R²) at this Optimum", value=0.0, format="%.4f", step=0.01)
+        default_r2 = float(st.session_state.rsm_optimum.get("_rsm_r2", 0.0))
+        rsm_r2 = st.number_input("R-Squared (R²) at this Optimum", value=default_r2, format="%.4f", step=0.01)
+        
         if st.button("Save RSM Optimum"):
             st.session_state.rsm_optimum["_rsm_r2"] = rsm_r2
             st.toast("RSM Optimum saved!", icon="✅")
