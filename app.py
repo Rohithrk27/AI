@@ -603,10 +603,10 @@ def page_home():
     <div class="glass-card animate-in" style="max-width: 800px; margin: 0 auto; text-align: center; padding: 40px;">
         <h3 class="gradient-text-blue" style="margin-top: 0;">What is OptiLab?</h3>
         <p style="font-size: 1.1rem; color: #cbd5e1; line-height: 1.6; margin-bottom: 20px;">
-            OptiLab is a next-generation AI platform designed to replace classical Response Surface Methodology (RSM) with advanced Machine Learning. 
+            OptiLab is a next-generation AI platform built to validate experimental optimization by using a powerful hybrid approach, training advanced Machine Learning alongside classical Response Surface Methodology (RSM).
         </p>
         <p style="font-size: 1.1rem; color: #cbd5e1; line-height: 1.6;">
-            By combining state-of-the-art surrogate modeling with Bayesian Optimization, OptiLab helps researchers discover absolute optimum conditions faster, more accurately, and with fewer physical experiments.
+            By combining state-of-the-art surrogate modeling and Bayesian Optimization with classical statistical benchmarking, OptiLab helps researchers discover absolute optimum conditions faster, more accurately, and with total confidence.
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -1439,6 +1439,9 @@ def page_optimize():
             for f, v in zip(feature_names, best_point_orig):
                 best_dict[f] = round(float(v), 4)
             
+            st.session_state.ai_optimum = best_dict
+            st.session_state.ai_optimum_pred = best_pred
+            
             import pandas as pd
             st.dataframe(pd.DataFrame([best_dict]), use_container_width=True)
             st.success(f"**Predicted {target_col}:** {best_pred:.4f}")
@@ -1577,9 +1580,42 @@ def page_report():
 
     st.markdown("---")
     st.markdown("### 🎯 Optimization Results")
+    
+    st.info("**What the AI did:** Using Bayesian Optimization, the AI explored the theoretical landscape of your experiment. It calculated the exact combination of factors that is mathematically most likely to give you the highest possible yield, and it recommended the top experiments you should run next in the lab to verify this.")
+    
     if st.session_state.bo_recommendations is not None:
-        st.markdown("Top recommended experiments from Bayesian Optimization:")
-        st.dataframe(st.session_state.bo_recommendations, use_container_width=True)
+        st.markdown("**Top recommended experiments from Bayesian Optimization:**")
+        
+        recs = st.session_state.bo_recommendations.copy()
+        if "scaler" in st.session_state.preprocessed:
+            feature_names = st.session_state.preprocessed["feature_names"]
+            scaler = st.session_state.preprocessed["scaler"]
+            scaled_factors = recs[feature_names].values
+            orig_factors = scaler.inverse_transform(scaled_factors)
+            for i, fname in enumerate(feature_names):
+                recs[fname] = [round(val, 4) for val in orig_factors[:, i]]
+                
+        st.dataframe(recs, use_container_width=True)
+        
+        if "ai_optimum" in st.session_state:
+            st.markdown("---")
+            st.markdown("### ⚖️ AI vs Classical RSM Comparison")
+            
+            comp_col1, comp_col2 = st.columns(2)
+            with comp_col2:
+                st.markdown("**⭐ Absolute Optimal Theoretical Conditions (AI)**")
+                st.dataframe(pd.DataFrame([st.session_state.ai_optimum]), use_container_width=True)
+                if "ai_optimum_pred" in st.session_state:
+                    st.success(f"**Predicted Target:** {st.session_state.ai_optimum_pred:.4f}")
+                    
+            with comp_col1:
+                st.markdown("**Classical Statistical Optimum (RSM)**")
+                if "rsm_optimum" in st.session_state and "_rsm_r2" in st.session_state.rsm_optimum:
+                    rsm_disp = {k: v for k, v in st.session_state.rsm_optimum.items() if k != "_rsm_r2"}
+                    st.dataframe(pd.DataFrame([rsm_disp]), use_container_width=True)
+                    st.info(f"**RSM R² Score:** {st.session_state.rsm_optimum['_rsm_r2']:.4f}")
+                else:
+                    st.warning("No classical RSM optimum found. You skipped the RSM benchmark in Phase 4.")
     else:
         st.info("Run Bayesian Optimization in Phase 4 to see recommended conditions here.")
 
