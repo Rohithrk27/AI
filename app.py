@@ -618,8 +618,7 @@ with st.sidebar:
 
     st.markdown("---")
     
-    light_mode = st.toggle("☀️ Light Mode", value=st.session_state.get('light_mode', False))
-    st.session_state.light_mode = light_mode
+    st.toggle("☀️ Light Mode", key="light_mode")
 
     st.markdown("---")
 
