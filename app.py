@@ -1671,7 +1671,7 @@ def page_report():
                     opt_val = base_dict[fname]
                     fig.add_vline(x=opt_val, line_width=1, line_color="red", row=1, col=i+1)
                     
-                fig.update_layout(height=450, title_text=f"Optimization Plot (Marginal Effects on {target_col})", margin=dict(t=120))
+                fig.update_layout(height=450, margin=dict(t=100, b=40, l=60, r=20))
                 
                 # Add target info to the far left Y-axis
                 if "ai_optimum_pred" in st.session_state:
