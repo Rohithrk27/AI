@@ -817,14 +817,8 @@ def page_upload():
         st.markdown("You can edit the data directly in the table below. All numerical columns are forced to floats.")
         
         # Use data_editor so user can modify data directly.
-        edited_df = st.data_editor(st.session_state.raw_data, use_container_width=True, num_rows="dynamic")
-        
-        # Force all columns to float where possible, to fulfill the "all factors are float" requirement.
-        for col in edited_df.columns:
-            try:
-                edited_df[col] = edited_df[col].astype(float)
-            except Exception:
-                pass
+        # A static key prevents the widget from being recreated on every keystroke, preserving focus.
+        edited_df = st.data_editor(st.session_state.raw_data, use_container_width=True, num_rows="dynamic", key="raw_data_editor")
                 
         st.session_state.raw_data = edited_df
 
@@ -1755,6 +1749,52 @@ def page_report():
             st.line_chart(history_df.set_index("iteration")["best_value"])
         else:
             st.write("Iterate in Phase 5 to track convergence over time.")
+
+    st.markdown("---")
+    st.markdown("### 📄 Export Full Report")
+    st.markdown("Download a beautifully formatted PDF report containing your data summary, AI optimum vs RSM baseline, optimization recommendations, and analytical plots.")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Prepare PDF Report", type="primary"):
+            with st.spinner("Generating PDF Report... This may take a few seconds."):
+                try:
+                    from modules.reporting.report_generator import generate_report
+                    from datetime import datetime
+                    
+                    # Gather all necessary data from session state
+                    report_data = {
+                        "raw_data": st.session_state.get("raw_data"),
+                        "factor_cols": st.session_state.get("factor_cols", []),
+                        "response_cols": st.session_state.get("response_cols", []),
+                        "iteration_count": st.session_state.get("iteration_count", 0),
+                        "evaluation_results": st.session_state.get("evaluation_results", {}),
+                        "best_model_name": st.session_state.get("best_model_name"),
+                        "best_model": st.session_state.get("best_model"),
+                        "tuning_results": st.session_state.get("tuning_results", {}),
+                        "bo_recommendations": st.session_state.get("bo_recommendations"),
+                        "bo_history": st.session_state.get("bo_history", []),
+                        "ai_optimum": st.session_state.get("ai_optimum"),
+                        "ai_optimum_pred": st.session_state.get("ai_optimum_pred"),
+                        "rsm_optimum": st.session_state.get("rsm_optimum"),
+                        "preprocessed": st.session_state.get("preprocessed")
+                    }
+                    
+                    st.session_state.pdf_bytes = bytes(generate_report(report_data))
+                    st.session_state.pdf_filename = f"OptiLab_Report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                    st.success("Report prepared successfully! Click the download button.")
+                except Exception as e:
+                    st.error(f"Error generating report: {str(e)}")
+                    
+    with col2:
+        if "pdf_bytes" in st.session_state:
+            st.download_button(
+                label="⬇️ Click here to Download PDF",
+                data=st.session_state.pdf_bytes,
+                file_name=st.session_state.pdf_filename,
+                mime="application/pdf",
+                type="primary"
+            )
 
 
 # ──────────────────────────────────────────────

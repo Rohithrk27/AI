@@ -21,7 +21,7 @@ class OptiLabReport(FPDF):
     def header(self):
         self.set_font("Helvetica", "B", 10)
         self.set_text_color(67, 233, 123)
-        self.cell(0, 8, "OptiLab — AI-Assisted Experimental Optimization Report", align="R")
+        self.cell(0, 8, "OptiLab - AI-Assisted Experimental Optimization Report", align="R")
         self.ln(10)
         self.set_draw_color(67, 233, 123)
         self.line(10, self.get_y(), self.w - 10, self.get_y())
@@ -93,6 +93,110 @@ class OptiLabReport(FPDF):
             self.ln()
 
         self.ln(4)
+
+
+def _generate_marginal_effects_plot(report_data: dict) -> str:
+    """Generate Marginal Effects plot using matplotlib and return temp file path."""
+    import tempfile
+    import os
+    
+    preprocessed = report_data.get("preprocessed")
+    model = report_data.get("best_model")
+    ai_optimum = report_data.get("ai_optimum")
+    target_col = report_data.get("response_cols", ["Response"])[0]
+    
+    if not (preprocessed and model and ai_optimum):
+        return None
+        
+    feature_names = preprocessed["feature_names"]
+    X_orig = preprocessed["X_original"]
+    scaler = preprocessed.get("scaler")
+    
+    n_features = len(feature_names)
+    fig, axes = plt.subplots(1, n_features, figsize=(3 * n_features, 4), sharey=True)
+    if n_features == 1:
+        axes = [axes]
+        
+    for i, fname in enumerate(feature_names):
+        f_min = X_orig[:, i].min()
+        f_max = X_orig[:, i].max()
+        f_grid = np.linspace(f_min, f_max, 50)
+        
+        # Create grid keeping other factors at optimum
+        grid_df = pd.DataFrame([ai_optimum] * 50)
+        grid_df[fname] = f_grid
+        grid_df = grid_df[feature_names]
+        
+        if scaler:
+            X_pred = scaler.transform(grid_df)
+        else:
+            X_pred = grid_df.values
+            
+        if hasattr(model, "predict_with_uncertainty"):
+            preds, _ = model.predict_with_uncertainty(X_pred)
+        else:
+            preds = model.predict(X_pred)
+            
+        if isinstance(preds, np.ndarray) and preds.ndim > 1 and preds.shape[1] > 1:
+            preds = preds[:, 0]
+            
+        ax = axes[i]
+        ax.plot(f_grid, preds, color='blue')
+        ax.axvline(ai_optimum[fname], color='red', linestyle='-', linewidth=1)
+        
+        ax.set_title(f"{fname}\nOpt: {ai_optimum[fname]:.4g}", fontsize=10)
+        ax.grid(True, alpha=0.3)
+        if i == 0:
+            ax.set_ylabel(target_col)
+            
+    plt.tight_layout()
+    fd, path = tempfile.mkstemp(suffix=".png")
+    os.close(fd)
+    plt.savefig(path, dpi=150, bbox_inches='tight')
+    plt.close(fig)
+    return path
+
+def _generate_importance_plot(report_data: dict) -> str:
+    """Generate Feature Importance plot using Random Forest and return temp file path."""
+    import tempfile
+    import os
+    from sklearn.ensemble import RandomForestRegressor
+    
+    preprocessed = report_data.get("preprocessed")
+    if not preprocessed:
+        return None
+        
+    X_train = preprocessed["X"]
+    y_train = preprocessed["y"]
+    if y_train.ndim > 1:
+        y_train = y_train[:, 0]
+        
+    feature_names = preprocessed["feature_names"]
+    
+    rf = RandomForestRegressor(n_estimators=100, random_state=42)
+    rf.fit(X_train, y_train)
+    importances = rf.feature_importances_ * 100
+    
+    # Sort for plotting
+    indices = np.argsort(importances)
+    
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.barh(range(len(indices)), importances[indices], color='skyblue', align='center')
+    ax.set_yticks(range(len(indices)))
+    ax.set_yticklabels([feature_names[i] for i in indices])
+    ax.set_xlabel('Importance (%)')
+    ax.set_title('Relative Factor Importance')
+    
+    # Add values on bars
+    for i, v in enumerate(importances[indices]):
+        ax.text(v + 1, i, f"{v:.1f}%", va='center')
+        
+    plt.tight_layout()
+    fd, path = tempfile.mkstemp(suffix=".png")
+    os.close(fd)
+    plt.savefig(path, dpi=150, bbox_inches='tight')
+    plt.close(fig)
+    return path
 
 
 def generate_report(report_data: dict) -> bytes:
@@ -216,21 +320,30 @@ def generate_report(report_data: dict) -> bytes:
     pdf.add_page()
     pdf.section_title("4. Optimization Results")
 
+    # Show RSM vs AI Comparison if available
+    ai_optimum = report_data.get("ai_optimum")
+    ai_optimum_pred = report_data.get("ai_optimum_pred")
+    rsm_optimum = report_data.get("rsm_optimum")
+
+    if ai_optimum:
+        pdf.subsection_title("AI Theoretical Optimum")
+        for k, v in ai_optimum.items():
+            pdf.body_text(f"  {k}: {v:.4f}")
+        if ai_optimum_pred is not None:
+            pdf.body_text(f"  Predicted Yield: {ai_optimum_pred:.4f}")
+        pdf.ln(5)
+        
+    if rsm_optimum and rsm_optimum.get("_rsm_r2", 0) != 0.0:
+        pdf.subsection_title("Classical RSM Optimum")
+        for k, v in rsm_optimum.items():
+            if k != "_rsm_r2":
+                pdf.body_text(f"  {k}: {v:.4f}")
+        pdf.body_text(f"  RSM R² Score: {rsm_optimum.get('_rsm_r2', 0):.4f}")
+        pdf.ln(5)
+
     bo_recs = report_data.get("bo_recommendations")
     if bo_recs is not None and len(bo_recs) > 0:
-        pdf.subsection_title("Recommended Optimal Conditions")
-        # Show top recommendation
-        top = bo_recs.iloc[0]
-        for col in bo_recs.columns:
-            if col not in ["Rank"]:
-                val = top[col]
-                if isinstance(val, float):
-                    pdf.body_text(f"  {col}: {val:.4f}")
-                else:
-                    pdf.body_text(f"  {col}: {val}")
-
-        pdf.ln(5)
-        pdf.subsection_title("All Recommendations")
+        pdf.subsection_title("Recommended Optimal Conditions (Next Experiments)")
         pdf.add_table(bo_recs)
 
     # Convergence
@@ -241,10 +354,44 @@ def generate_report(report_data: dict) -> bytes:
             pdf.body_text(f"  Iteration {h['iteration']}: Best = {h['best_value']:.4f} ({h.get('n_experiments', '?')} experiments)")
 
     # ──────────────────────────────────────
-    # 5. Conclusion
+    # 5. Visualizations
+    # ──────────────────────────────────────
+    import os
+    
+    marginal_path = _generate_marginal_effects_plot(report_data)
+    importance_path = _generate_importance_plot(report_data)
+    
+    if marginal_path or importance_path:
+        pdf.add_page()
+        pdf.section_title("5. Analytical Plots")
+        
+        if marginal_path:
+            pdf.subsection_title("AI Marginal Effects (Optimization Plot)")
+            pdf.body_text("This plot shows how each individual factor affects the yield when all other factors are held constant at their optimal values.")
+            pdf.image(marginal_path, x=20, w=170)
+            pdf.ln(5)
+            try:
+                os.remove(marginal_path)
+            except Exception:
+                pass
+                
+        if importance_path:
+            # Check if there's enough space, if not add page
+            if pdf.get_y() > 200:
+                pdf.add_page()
+            pdf.subsection_title("Relative Factor Importance")
+            pdf.body_text("Feature importance determined via Random Forest model on the input data.")
+            pdf.image(importance_path, x=40, w=130)
+            try:
+                os.remove(importance_path)
+            except Exception:
+                pass
+
+    # ──────────────────────────────────────
+    # 6. Conclusion
     # ──────────────────────────────────────
     pdf.add_page()
-    pdf.section_title("5. Summary & Conclusions")
+    pdf.section_title("6. Summary & Conclusions")
     pdf.body_text(
         "This report was generated by OptiLab, an AI-assisted experimental optimization platform. "
         "The platform trained a Gaussian Process surrogate model on the provided experimental data, "
@@ -264,11 +411,10 @@ def generate_report(report_data: dict) -> bytes:
     pdf.ln(10)
     pdf.set_font("Helvetica", "I", 10)
     pdf.set_text_color(100, 100, 100)
-    pdf.cell(0, 8, "— End of Report —", align="C")
+    pdf.cell(0, 8, "- End of Report -", align="C")
 
     # Output
     return pdf.output()
-
 
 def save_report(report_bytes: bytes, filepath: str):
     """Save report bytes to a file."""
